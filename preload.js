@@ -1,11 +1,11 @@
-const { contextBridge } = require('electron/renderer')
+const { contextBridge } = require("electron/renderer");
 
-contextBridge.exposeInMainWorld('versions', {
-  node: () => process.versions.node,
-  chrome: () => process.versions.chrome,
-  electron: () => process.versions.electron
-})
+contextBridge.exposeInMainWorld("versions", {
+    node: () => process.versions.node,
+    chrome: () => process.versions.chrome,
+    electron: () => process.versions.electron,
+});
 
-contextBridge.exposeInMainWorld('electronAPI', {
-  getNumber: () => 114514,
-})
+contextBridge.exposeInMainWorld("electronAPI", {
+    getNumber: () => 114514,
+});
