@@ -5,3 +5,7 @@ contextBridge.exposeInMainWorld('versions', {
   chrome: () => process.versions.chrome,
   electron: () => process.versions.electron
 })
+
+contextBridge.exposeInMainWorld('electronAPI', {
+  getNumber: () => 114514,
+})
