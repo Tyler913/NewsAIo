@@ -10,7 +10,8 @@
             http-equiv="X-Content-Security-Policy"
             content="default-src 'self'; script-src 'self'"
         />
-        <title>Hello from Electron renderer!</title>
+        <title>RSS test</title>
+        <link rel="stylesheet" href="style.css">
     </head>
 
     <body>
@@ -18,6 +19,8 @@
         <p>👋</p>
         <p id="info"></p>
         <p id="fuckingTestNumber">u said right</p>
+        <button id="butt">获取 RSS</button>
+        <ul id="feedList"></ul>
     </body>
-    <script src="./renderer.js"></script>
+    <script src="renderer.js"></script>
 </html>

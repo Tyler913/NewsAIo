@@ -22,5 +22,8 @@
   "homepage": "https://github.com/Tyler913/NewsAIo#readme",
   "devDependencies": {
     "electron": "^34.0.2"
+  },
+  "dependencies": {
+    "rss-parser": "^3.13.0"
   }
 }
