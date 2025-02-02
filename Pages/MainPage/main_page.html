@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>News AIo</title>
+    <link rel="stylesheet" href="/Pages/MainPage/main_page.css">
+    <style>
+        /* Reset and basic styles */
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: Arial, sans-serif;
+        }
+
+        /* Container to hold the three zones */
+        .container {
+            display: flex;
+            height: 100vh;
+            /* Full viewport height */
+        }
+
+        /* Common zone styling */
+        .zone {
+            padding: 15px;
+            overflow-y: auto;
+        }
+
+        /* Left zone (RSS Sources) */
+        .sidebar {
+            width: 20%;
+            background-color: #f0f0f0;
+            border-right: 1px solid #ccc;
+        }
+
+        /* Middle zone (Article List) */
+        .middle {
+            width: 30%;
+            background-color: #fafafa;
+            border-right: 1px solid #ccc;
+        }
+
+        /* Right zone (Article Content) */
+        .content {
+            flex: 1;
+            /* Take up remaining space */
+            background-color: #fff;
+        }
+
+        /* Styling for list items */
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        li {
+            padding: 10px;
+            margin-bottom: 5px;
+            border-bottom: 1px solid #ddd;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        li:hover {
+            background-color: #e6e6e6;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <!-- Left Zone: RSS Sources -->
+        <div class="zone sidebar">
+            <h2>RSS Sources</h2>
+            <ul id="rss-sources">
+                <li>Source 1</li>
+                <li>Source 2</li>
+                <li>Source 3</li>
+            </ul>
+        </div>
+
+        <!-- Middle Zone: Article List -->
+        <div class="zone middle">
+            <h2>Articles</h2>
+            <ul id="articles">
+                <!-- Each list item carries some sample content in a data attribute -->
+                <li data-content="This is the content for Article 1.">
+                    Article 1 Title
+                </li>
+                <li data-content="This is the content for Article 2.">
+                    Article 2 Title
+                </li>
+                <li data-content="This is the content for Article 3.">
+                    Article 3 Title
+                </li>
+            </ul>
+        </div>
+
+        <!-- Right Zone: Article Content -->
+        <div class="zone content">
+            <h2>Article Content</h2>
+            <div id="article-content">
+                <p>Please select an article from the list to view its content.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript to handle article clicks -->
+    <script>
+        // Wait until the DOM is fully loaded
+        document.addEventListener("DOMContentLoaded", function () {
+            const articlesList = document.getElementById("articles");
+            const articleDisplay = document.getElementById("article-content");
+
+            // Delegate click events to the <ul> container
+            articlesList.addEventListener("click", function (event) {
+                const target = event.target;
+                if (target && target.tagName === "LI") {
+                    // Get content from data attribute and display it
+                    const content = target.getAttribute("data-content");
+                    articleDisplay.innerHTML = `<p>${content}</p>`;
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>
