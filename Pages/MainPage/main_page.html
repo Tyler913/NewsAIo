@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <title>Electron RSS Reader</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                margin: 2rem;
+                background: #f9f9f9;
+            }
+
+            #header {
+                text-align: center;
+                margin-bottom: 2rem;
+            }
+
+            #rss-feed-container {
+                display: flex;
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .rss-item {
+                background: #ffffff;
+                padding: 1rem;
+                border-radius: 4px;
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            }
+
+            .rss-item h3 {
+                margin: 0 0 0.5rem 0;
+                font-size: 1.2rem;
+            }
+
+            .rss-item .description {
+                font-size: 0.9rem;
+                color: #444;
+            }
+
+            .rss-item a {
+                color: #0066cc;
+                text-decoration: none;
+                font-size: 0.9rem;
+            }
+
+            .rss-item a:hover {
+                text-decoration: underline;
+            }
+
+            #loading {
+                text-align: center;
+                font-size: 1.1rem;
+                color: #777;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="header">
+            <h1>My RSS Reader</h1>
+            <p>Fetching articles from an RSS Feed</p>
+        </div>
+
+        <div id="loading">Loading RSS feed...</div>
+        <div id="rss-feed-container" style="display: none"></div>
+
+        <script>
+            // Replace this URL with the RSS feed you want to display
+            const RSS_FEED_URL = "https://www.nasa.gov/rss/dyn/breaking_news.rss";
+
+            // As soon as the DOM is ready, fetch the RSS feed
+            document.addEventListener("DOMContentLoaded", () => {
+                fetchRSSFeed(RSS_FEED_URL);
+            });
+
+            function fetchRSSFeed(url) {
+                fetch(url)
+                    .then((response) => {
+                        if (!response.ok) {
+                            throw new Error(
+                                `Network response was not ok (status: ${response.status})`
+                            );
+                        }
+                        return response.text();
+                    })
+                    .then((str) => {
+                        // Parse the XML string
+                        const parser = new DOMParser();
+                        const xml = parser.parseFromString(str, "text/xml");
+                        displayFeed(xml);
+                    })
+                    .catch((error) => {
+                        console.error("Error fetching RSS feed:", error);
+                        document.getElementById("loading").textContent =
+                            "Error loading RSS feed. Please check the console for more details.";
+                    });
+            }
+
+            function displayFeed(xml) {
+                const container = document.getElementById("rss-feed-container");
+
+                // Extract each item from the RSS
+                const items = xml.querySelectorAll("item");
+                if (!items.length) {
+                    document.getElementById("loading").textContent =
+                        "No RSS items found.";
+                    return;
+                }
+
+                // Clear loading text
+                document.getElementById("loading").style.display = "none";
+                container.style.display = "block";
+
+                items.forEach((item) => {
+                    // Extract relevant data: title, description, link, pubDate, etc.
+                    const title =
+                        item.querySelector("title")?.textContent || "No Title";
+                    const link = item.querySelector("link")?.textContent || "#";
+                    const description =
+                        item.querySelector("description")?.textContent ||
+                        "No Description";
+
+                    // Create a div to hold the RSS item
+                    const itemDiv = document.createElement("div");
+                    itemDiv.classList.add("rss-item");
+
+                    // Title
+                    const titleElement = document.createElement("h3");
+                    titleElement.textContent = title;
+
+                    // Link
+                    const linkElement = document.createElement("a");
+                    linkElement.href = link;
+                    linkElement.target = "_blank";
+                    linkElement.textContent = "Read more";
+
+                    // Description
+                    const descriptionElement = document.createElement("p");
+                    descriptionElement.classList.add("description");
+                    descriptionElement.innerHTML = description; // sometimes HTML
+
+                    // Append elements to the item container
+                    itemDiv.appendChild(titleElement);
+                    itemDiv.appendChild(descriptionElement);
+                    itemDiv.appendChild(linkElement);
+
+                    // Add the item to the main container
+                    container.appendChild(itemDiv);
+                });
+            }
+        </script>
+    </body>
+</html>
