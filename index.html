@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8" />
     <title>News AIo</title>
-    <link rel="stylesheet" href="/Pages/MainPage/main_page.css">
+    <link rel="stylesheet" href="/MainPage/.css">
     <style>
         /* Reset and basic styles */
         * {
@@ -112,22 +112,8 @@
     </div>
 
     <!-- JavaScript to handle article clicks -->
-    <script>
-        // Wait until the DOM is fully loaded
-        document.addEventListener("DOMContentLoaded", function () {
-            const articlesList = document.getElementById("articles");
-            const articleDisplay = document.getElementById("article-content");
-
-            // Delegate click events to the <ul> container
-            articlesList.addEventListener("click", function (event) {
-                const target = event.target;
-                if (target && target.tagName === "LI") {
-                    // Get content from data attribute and display it
-                    const content = target.getAttribute("data-content");
-                    articleDisplay.innerHTML = `<p>${content}</p>`;
-                }
-            });
-        });
+    <script src="renderer.js">
+        
     </script>
 </body>
 
