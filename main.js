@@ -1,3 +1,4 @@
+const { ipcMain } = require("electron");
 const { app, BrowserWindow } = require("electron/main");
 const path = require("node:path");
 
@@ -17,6 +18,7 @@ const createWindow = () => {
 
 app.whenReady().then(() => {
     createWindow();
+    console.log("window created");
 
     app.on("activate", () => {
         if (BrowserWindow.getAllWindows().length === 0) {
@@ -29,4 +31,9 @@ app.on("window-all-closed", () => {
     if (process.platform !== "darwin") {
         app.quit();
     }
+});
+
+ipcMain.on("log-renderer-to-main", (event, log) => {
+    console.log(log);
+    //event.reply("main-reply", "received");
 });
