@@ -8,7 +8,7 @@ const createWindow = () => {
         height: 800,
         webPreferences: {
             preload: path.join(__dirname, "preload.js"),
-            contextIsolation: false,
+            contextIsolation: false,//contextBrige必须在contextIsolation为true时才能使用
             nodeIntegration: true,
         },
     });
