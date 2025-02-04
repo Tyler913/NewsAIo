@@ -18,7 +18,6 @@ document.addEventListener("DOMContentLoaded", function () {
         const target = event.target;
         if (target && target.tagName === "LI") {
             // 获取点击的文章序号
-            //window.electronAPI.sendLogToMain("114514");
             const items = Array.from(target.parentNode.children);
             const index = items.indexOf(target);
             articleDisplay.innerHTML = `<p>you are clicking ${index} element</p>`;

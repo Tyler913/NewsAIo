@@ -38,17 +38,5 @@ app.on("window-all-closed", () => {
 // Listen for logs from renderer
 ipcMain.on("log-to-terminal", (_, message) => {
     console.log(`[Renderer] ${message}`); // Log to terminal
-    writeToFile(message); // Optional: Write to file
 });
 
-// Optional: Write logs to a file
-function writeToFile(message) {
-    const logPath = path.join(__dirname, "logs.txt");
-    fs.appendFile(
-        logPath,
-        `${new Date().toISOString()} - ${message}\n`,
-        (err) => {
-            if (err) console.error("Log write failed:", err);
-        }
-    );
-}
