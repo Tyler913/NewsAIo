@@ -1,4 +1,12 @@
-const { ipcRenderer } = require("electron");
+// Optional: Override console.log to auto-forward logs
+const originalLog = console.log;
+console.log = (...args) => {
+    originalLog(...args);
+    window.electronAPI.logToTerminal(args.join(" "));
+};
+
+window.electronAPI.logToTerminal("Let me try!")
+
 
 // Wait until the DOM is fully loaded
 document.addEventListener("DOMContentLoaded", function () {
@@ -16,7 +24,4 @@ document.addEventListener("DOMContentLoaded", function () {
             articleDisplay.innerHTML = `<p>you are clicking ${index} element</p>`;
         }
     });
-});
-ipcRenderer.on("main-reply", (event, log) => {
-    //console.log(log);
 });
