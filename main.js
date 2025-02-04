@@ -11,10 +11,12 @@ const createWindow = () => {
             preload: path.join(__dirname, "preload.js"),
             contextIsolation: true, //contextBridge必须在contextIsolation为true时才能使用
             nodeIntegration: false,
+            devTools: true,//是否允许开发者工具
         },
     });
 
     // win.webContents.openDevTools();
+    
 
     win.loadFile(path.join(__dirname, "index.html"));
 };
@@ -36,7 +38,7 @@ app.on("window-all-closed", () => {
 });
 
 // Listen for logs from renderer
-ipcMain.on("log-to-terminal", (_, message) => {
-    console.log(`[Renderer] ${message}`); // Log to terminal
+ipcMain.on("log-with-level", (_, { level, message }) => {
+    console.log(`[Renderer][${level}] ${message}`);
 });
 

@@ -1,12 +1,16 @@
 // Optional: Override console.log to auto-forward logs
 const originalLog = console.log;
-console.log = (...args) => {
+console.log = (level = "info", ...args) => {
     originalLog(...args);
-    window.electronAPI.logToTerminal(args.join(" "));
+    //检测log等级
+    if (!(level === "error" || level === "warn" || level === "info")) {
+        window.electronAPI?.logWithLevel("error".toUpperCase(), "Invalid log level! Original message: " + args.join(" "));
+    }
+    else
+        window.electronAPI?.logWithLevel(level.toUpperCase(), args.join(" "));
 };
 
-window.electronAPI.logToTerminal("Let me try!")
-
+console.log("ee4514","Hello, World!");
 
 // Wait until the DOM is fully loaded
 document.addEventListener("DOMContentLoaded", function () {
@@ -20,6 +24,7 @@ document.addEventListener("DOMContentLoaded", function () {
             // 获取点击的文章序号
             const items = Array.from(target.parentNode.children);
             const index = items.indexOf(target);
+            console.log("info", `you are clicking ${index} element`);
             articleDisplay.innerHTML = `<p>you are clicking ${index} element</p>`;
         }
     });
