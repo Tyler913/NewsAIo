@@ -4,13 +4,13 @@ console.log = (level = "info", ...args) => {
     originalLog(...args);
     //检测log等级
     if (!(level === "error" || level === "warn" || level === "info")) {
-        window.electronAPI?.logWithLevel("error".toUpperCase(), "Invalid log level! Original message: " + args.join(" "));
+        window.electronAPI?.logWithLevel("error".toLocaleUpperCase(), "Invalid log level! Original message: " + args.join(" "));
     }
     else
         window.electronAPI?.logWithLevel(level.toUpperCase(), args.join(" "));
 };
 
-console.log("ee4514","Hello, World!");
+console.log("info","Hello, World!");
 
 // Wait until the DOM is fully loaded
 document.addEventListener("DOMContentLoaded", function () {
