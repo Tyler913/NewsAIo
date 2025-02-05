@@ -2,6 +2,8 @@ const { ipcMain } = require("electron");
 const fs = require("fs");
 const { app, BrowserWindow } = require("electron/main");
 const path = require("node:path");
+const Parser = require('rss-parser');
+const parser = new Parser();
 
 const createWindow = () => {
     const win = new BrowserWindow({
@@ -9,15 +11,14 @@ const createWindow = () => {
         height: 1000,
         webPreferences: {
             preload: path.join(__dirname, "preload.js"),
-            contextIsolation: true, //contextBridge必须在contextIsolation为true时才能使用
+            contextIsolation: true,
             nodeIntegration: false,
-            devTools: true,//是否允许开发者工具
+            devTools: true,
         },
     });
 
     // win.webContents.openDevTools();
     
-
     win.loadFile(path.join(__dirname, "index.html"));
 };
 
@@ -37,8 +38,25 @@ app.on("window-all-closed", () => {
     }
 });
 
-// Listen for logs from renderer
 ipcMain.on("log-with-level", (_, { level, message }) => {
     console.log(`[Renderer][${level}] ${message}`);
 });
 
+// Add RSS handler
+ipcMain.handle('fetch-rss', async (_, url) => {
+    try {
+        const feed = await parser.parseURL(url);
+        return {
+            title: feed.title,
+            items: feed.items.map(item => ({
+                title: item.title,
+                content: item.content || item.description,
+                link: item.link,
+                pubDate: item.pubDate
+            }))
+        };
+    } catch (error) {
+        console.error('RSS Error:', error);
+        throw error;
+    }
+});

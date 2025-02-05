@@ -1,31 +1,62 @@
-// Optional: Override console.log to auto-forward logs
 const originalLog = console.log;
 console.log = (level = "info", ...args) => {
     originalLog(...args);
-    //检测log等级
     if (!(level === "error" || level === "warn" || level === "info")) {
-        window.electronAPI?.logWithLevel("error".toLocaleUpperCase(), "Invalid log level! Original message: " + args.join(" "));
+        window.electronAPI?.logWithLevel("error", "Invalid log level! Original message: " + args.join(" "));
+    } else {
+        window.electronAPI?.logWithLevel(level, args.join(" "));
     }
-    else
-        window.electronAPI?.logWithLevel(level.toUpperCase(), args.join(" "));
 };
 
-console.log("info","Hello, World!");
-
-// Wait until the DOM is fully loaded
 document.addEventListener("DOMContentLoaded", function () {
+    const rssSources = document.getElementById("rss-sources");
     const articlesList = document.getElementById("articles");
     const articleDisplay = document.getElementById("article-content");
 
-    // Delegate click events to the <ul> container
-    articlesList.addEventListener("click", function (event) {
+    // Handle RSS source clicks
+    rssSources.addEventListener("click", async (event) => {
         const target = event.target;
         if (target && target.tagName === "LI") {
-            // 获取点击的文章序号
-            const items = Array.from(target.parentNode.children);
-            const index = items.indexOf(target);
-            console.log("info", `you are clicking ${index} element`);
-            articleDisplay.innerHTML = `<p>you are clicking ${index} element</p>`;
+            const url = target.dataset.url;
+            try {
+                console.log("info", `Fetching RSS feed from: ${url}`);
+                const feed = await window.electronAPI.fetchRss(url);
+                
+                // Update middle section title
+                document.querySelector('.middle h2').textContent = feed.title;
+                
+                // Clear previous articles
+                articlesList.innerHTML = '';
+                
+                // Populate new articles
+                feed.items.forEach(item => {
+                    const li = document.createElement("li");
+                    li.textContent = item.title;
+                    li.dataset.content = item.content;
+                    li.dataset.link = item.link;
+                    li.dataset.pubDate = item.pubDate;
+                    articlesList.appendChild(li);
+                });
+            } catch (error) {
+                console.log("error", `Failed to fetch RSS: ${error.message}`);
+                articleDisplay.innerHTML = `<p>Error loading feed: ${error.message}</p>`;
+            }
+        }
+    });
+
+    // Handle article clicks
+    articlesList.addEventListener("click", (event) => {
+        const target = event.target;
+        if (target && target.tagName === "LI") {
+            const content = target.dataset.content;
+            const link = target.dataset.link;
+            const pubDate = target.dataset.pubDate;
+            
+            articleDisplay.innerHTML = `
+                ${pubDate ? `<p><small>${new Date(pubDate).toLocaleString()}</small></p>` : ''}
+                <div>${content}</div>
+                ${link ? `<p><a href="${link}" target="_blank">Read full article</a></p>` : ''}
+            `;
         }
     });
 });
