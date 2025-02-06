@@ -93,6 +93,16 @@ document.addEventListener("DOMContentLoaded", function () {
                 <div>${content}</div>
                 ${link ? `<p><a href="${link}" target="_blank">Read full article</a></p>` : ''}
             `;
+
+            // Ensure any images inside the content are styled correctly
+            const images = articleDisplay.querySelectorAll("img");
+            images.forEach(img => {
+                img.style.display = 'block';
+                img.style.maxWidth = '100%';
+                img.style.height = 'auto';
+                img.style.margin = '0 auto';
+                img.style.objectFit = 'contain'; // Maintain aspect ratio and prevent overflow
+            });
         }
     });
 });
