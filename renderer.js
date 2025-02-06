@@ -18,9 +18,11 @@ document.addEventListener("DOMContentLoaded", function () {
         const target = event.target;
         if (target && target.tagName === "LI") {
             const url = target.dataset.url;
+            document.getElementById("articles-loading-indicator").innerText = "Articles (Loading...)";
             try {
                 console.log("info", `Fetching RSS feed from: ${url}`);
                 const feed = await window.electronAPI.fetchRss(url);
+                console.log("info", `Fetched RSS feed: ${feed.title} (${feed.items.length} items)`);
                 
                 // Update middle section title
                 document.querySelector('.middle h2').textContent = feed.title;
@@ -41,6 +43,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 console.log("error", `Failed to fetch RSS: ${error.message}`);
                 articleDisplay.innerHTML = `<p>Error loading feed: ${error.message}</p>`;
             }
+            document.getElementById("articles-loading-indicator").innerText = "Articles";
         }
     });
 

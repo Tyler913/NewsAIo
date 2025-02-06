@@ -99,7 +99,7 @@ ipcMain.handle('fetch-rss', async (_, url) => {
     } catch (error) {
         // Fallback to cached data if available
         if (cachedData) {
-            console.log('Using cached data due to fetch error');
+            console.error('Using cached data due to fetch error');
             return cachedData.feed;
         }
         throw error;
