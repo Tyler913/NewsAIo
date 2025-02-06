@@ -28,6 +28,7 @@ body {
     margin: 10px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     position: relative;
+    transition: all 0.3s ease; /* Added smooth transition */
 }
 
 .resize-handle {
@@ -52,6 +53,7 @@ body {
     min-width: 150px;
     max-width: 30%;
     background: linear-gradient(180deg, #8e9eab, #eef2f3);
+    transition: flex 0.3s ease, display 0.3s ease; /* Added transition for flex and display */
 }
 
 .middle {
@@ -59,6 +61,7 @@ body {
     min-width: 250px;
     max-width: 40%;
     background: linear-gradient(180deg, #eef2f3, #ffffff);
+    transition: flex 0.3s ease, display 0.3s ease; /* Added transition for flex and display */
 }
 
 .content {
@@ -107,13 +110,12 @@ li:active {
     box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
-/* Center and scale images inside the article content */
 #article-content img {
     display: block;
     max-width: 100%;
     height: auto;
-    margin: 0 auto; /* Center the image horizontally */
-    object-fit: contain; /* Ensure the image doesn't overflow or stretch */
+    margin: 0 auto;
+    object-fit: contain;
 }
 
 .zone::-webkit-scrollbar {
@@ -132,5 +134,18 @@ li:active {
 
 .zone::-webkit-scrollbar-thumb:hover {
     background: #a8a8a8;
+}
+
+/* Media queries for resizing */
+@media screen and (max-width: 1200px) {
+    .sidebar {
+        display: none; /* Hide sidebar when window is smaller than 1200px */
+    }
+}
+
+@media screen and (max-width: 1000px) {
+    .middle {
+        display: none; /* Hide middle section (article list) when window is smaller than 1000px */
+    }
 }
 

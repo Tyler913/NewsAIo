@@ -105,3 +105,4 @@ ipcMain.handle('fetch-rss', async (_, url) => {
         throw error;
     }
 });
+

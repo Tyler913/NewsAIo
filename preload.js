@@ -5,3 +5,4 @@ contextBridge.exposeInMainWorld("electronAPI", {
     logWithLevel: (level, message) => ipcRenderer.send("log-with-level", { level, message }),
     fetchRss: (url) => ipcRenderer.invoke('fetch-rss', url),
 });
+

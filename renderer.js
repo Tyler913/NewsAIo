@@ -14,7 +14,9 @@ document.addEventListener("DOMContentLoaded", function () {
     const rightResize = document.getElementById('right-resize');
     const sidebar = document.querySelector('.sidebar');
     const middle = document.querySelector('.middle');
-
+    const content = document.querySelector('.content');
+    
+    // Handle resizing the left and right panels
     function createResizer(resizeElement, targetElement) {
         let startX, startWidth;
 
@@ -46,6 +48,25 @@ document.addEventListener("DOMContentLoaded", function () {
 
     createResizer(leftResize, sidebar);
     createResizer(rightResize, middle);
+
+    // Handle window resizing to hide/show panels
+    window.addEventListener('resize', () => {
+        const windowWidth = window.innerWidth;
+
+        // Hide left panel if window is too narrow
+        if (windowWidth < 1200) {
+            sidebar.style.display = 'none';
+        } else {
+            sidebar.style.display = 'block';
+        }
+
+        // Hide middle panel if window is very narrow
+        if (windowWidth < 1000) {
+            middle.style.display = 'none';
+        } else {
+            middle.style.display = 'block';
+        }
+    });
 
     // Original Application Logic
     const rssSources = document.getElementById("rss-sources");
