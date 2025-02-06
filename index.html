@@ -5,79 +5,14 @@
     <meta charset="UTF-8" />
     <title>News AIo</title>
     <link rel="stylesheet" href="main_page.css">
-    <style>
-        /* Reset and basic styles */
-        * {
-            box-sizing: border-box;
-        }
-
-        html,
-        body {
-            margin: 0;
-            padding: 0;
-            height: 100%;
-            font-family: Arial, sans-serif;
-        }
-
-        /* Container to hold the three zones */
-        .container {
-            display: flex;
-            height: 100vh;
-            /* Full viewport height */
-        }
-
-        /* Common zone styling */
-        .zone {
-            padding: 15px;
-            overflow-y: auto;
-        }
-
-        /* Left zone (RSS Sources) */
-        .sidebar {
-            width: 20%;
-            background-color: #f0f0f0;
-            border-right: 1px solid #ccc;
-        }
-
-        /* Middle zone (Article List) */
-        .middle {
-            width: 30%;
-            background-color: #fafafa;
-            border-right: 1px solid #ccc;
-        }
-
-        /* Right zone (Article Content) */
-        .content {
-            flex: 1;
-            /* Take up remaining space */
-            background-color: #fff;
-        }
-
-        /* Styling for list items */
-        ul {
-            list-style: none;
-            padding: 0;
-        }
-
-        li {
-            padding: 10px;
-            margin-bottom: 5px;
-            border-bottom: 1px solid #ddd;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-
-        li:hover {
-            background-color: #e6e6e6;
-        }
-    </style>
 </head>
 
 <body>
     <div class="container">
         <!-- Left Zone: RSS Sources -->
         <div class="zone sidebar">
-            <h2>RSS Sources</h2>
+            <div class="resize-handle" id="left-resize"></div>
+            <h2>RSS</h2>
             <ul id="rss-sources">
                 <li data-url="http://mainssl.geekpark.net/rss.rss">极客公园</li>
                 <li data-url="https://36kr.com/feed">36Ker</li>
@@ -87,18 +22,12 @@
 
         <!-- Middle Zone: Article List -->
         <div class="zone middle">
+            <div class="resize-handle" id="right-resize"></div>
             <h2>Articles</h2>
             <ul id="articles">
-                <!-- Each list item carries some sample content in a data attribute -->
-                <li>
-                    Article 1 Title
-                </li>
-                <li>
-                    Article 2 Title
-                </li>
-                <li>
-                    Article 3 Title
-                </li>
+                <li>Article 1 Title</li>
+                <li>Article 2 Title</li>
+                <li>Article 3 Title</li>
             </ul>
         </div>
 
@@ -111,10 +40,6 @@
         </div>
     </div>
 
-    <!-- JavaScript to handle article clicks -->
-    <script src="renderer.js">
-        
-    </script>
+    <script src="renderer.js"></script>
 </body>
-
 </html>

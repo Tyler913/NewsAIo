@@ -9,11 +9,49 @@ console.log = (level = "info", ...args) => {
 };
 
 document.addEventListener("DOMContentLoaded", function () {
+    // Resizable Panels Logic
+    const leftResize = document.getElementById('left-resize');
+    const rightResize = document.getElementById('right-resize');
+    const sidebar = document.querySelector('.sidebar');
+    const middle = document.querySelector('.middle');
+
+    function createResizer(resizeElement, targetElement) {
+        let startX, startWidth;
+
+        function initDrag(e) {
+            startX = e.clientX;
+            startWidth = targetElement.offsetWidth;
+            document.documentElement.style.userSelect = 'none';
+            resizeElement.classList.add('active');
+            
+            document.addEventListener('mousemove', doDrag);
+            document.addEventListener('mouseup', stopDrag);
+        }
+
+        function doDrag(e) {
+            const deltaX = e.clientX - startX;
+            const newWidth = startWidth + deltaX;
+            targetElement.style.flex = `0 0 ${newWidth}px`;
+        }
+
+        function stopDrag() {
+            document.documentElement.style.userSelect = '';
+            resizeElement.classList.remove('active');
+            document.removeEventListener('mousemove', doDrag);
+            document.removeEventListener('mouseup', stopDrag);
+        }
+
+        resizeElement.addEventListener('mousedown', initDrag);
+    }
+
+    createResizer(leftResize, sidebar);
+    createResizer(rightResize, middle);
+
+    // Original Application Logic
     const rssSources = document.getElementById("rss-sources");
     const articlesList = document.getElementById("articles");
     const articleDisplay = document.getElementById("article-content");
 
-    // Handle RSS source clicks
     rssSources.addEventListener("click", async (event) => {
         const target = event.target;
         if (target && target.tagName === "LI") {
@@ -22,13 +60,9 @@ document.addEventListener("DOMContentLoaded", function () {
                 console.log("info", `Fetching RSS feed from: ${url}`);
                 const feed = await window.electronAPI.fetchRss(url);
                 
-                // Update middle section title
                 document.querySelector('.middle h2').textContent = feed.title;
-                
-                // Clear previous articles
                 articlesList.innerHTML = '';
                 
-                // Populate new articles
                 feed.items.forEach(item => {
                     const li = document.createElement("li");
                     li.textContent = item.title;
@@ -44,7 +78,6 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 
-    // Handle article clicks
     articlesList.addEventListener("click", (event) => {
         const target = event.target;
         if (target && target.tagName === "LI") {
