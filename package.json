@@ -24,6 +24,8 @@
     "electron": "^34.0.2"
   },
   "dependencies": {
+    "idb": "^8.0.2",
+    "image-downloader": "^4.3.0",
     "node-fetch": "^3.3.2",
     "rss-parser": "^3.13.0"
   }
