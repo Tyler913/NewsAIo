@@ -16,6 +16,25 @@ document.addEventListener("DOMContentLoaded", function () {
     const middle = document.querySelector('.middle');
     const content = document.querySelector('.content');
     
+    const backButton = document.createElement('button');
+    backButton.textContent = "Back";
+    backButton.style.position = "absolute";
+    backButton.style.top = "10px";
+    backButton.style.right = "10px";
+    backButton.style.padding = "10px 20px";
+    backButton.style.backgroundColor = "#2c3e50";
+    backButton.style.color = "white";
+    backButton.style.border = "none";
+    backButton.style.borderRadius = "5px";
+    backButton.style.cursor = "pointer";
+    backButton.style.display = "none";  // Initially hide the button
+
+    content.appendChild(backButton);
+
+    // Keep track of the app's current state
+    let isRssVisible = false;
+    let isArticlesVisible = false;
+
     // Handle resizing the left and right panels
     function createResizer(resizeElement, targetElement) {
         let startX, startWidth;
@@ -65,6 +84,80 @@ document.addEventListener("DOMContentLoaded", function () {
             middle.style.display = 'none';
         } else {
             middle.style.display = 'block';
+        }
+
+        toggleBackButton();
+    });
+
+    // Toggle back button visibility based on which section is visible
+    function toggleBackButton() {
+        const isSidebarVisible = sidebar.style.display !== 'none';
+        const isMiddleVisible = middle.style.display !== 'none';
+
+        if (isSidebarVisible && isMiddleVisible) {
+            backButton.style.display = 'none'; // No back button when both are visible
+        } else {
+            backButton.style.display = 'block'; // Show back button when one or both are hidden
+        }
+    }
+
+    backButton.addEventListener('click', () => {
+        const isSidebarVisible = sidebar.style.display !== 'none';
+        const isMiddleVisible = middle.style.display !== 'none';
+
+        // If RSS is hidden, show it above the Articles section
+        if (!isSidebarVisible && isMiddleVisible) {
+            sidebar.style.display = 'block';
+            middle.style.display = 'none';
+            backButton.textContent = "Back to Articles"; // Correct the button text
+            isRssVisible = true; // Track that RSS is visible
+            isArticlesVisible = false; // Articles is not visible
+        } 
+        // If both RSS and Articles are hidden, show Articles on top of Content, and toggle between them
+        else if (!isSidebarVisible && !isMiddleVisible) {
+            if (backButton.textContent === "Back to RSS List") {
+                // Show RSS section on top of content
+                sidebar.style.display = 'block';
+                backButton.textContent = "Back to Articles"; // Update button text
+                isRssVisible = true;
+                isArticlesVisible = false;
+            } else {
+                // Show Articles section above content
+                middle.style.display = 'block';
+                backButton.textContent = "Back to RSS List"; // Update button text
+                isArticlesVisible = true;
+                isRssVisible = false;
+            }
+        }
+    });
+
+    // Function to hide the previously shown section when clicking on the content area
+    content.addEventListener('click', (event) => {
+        const isSidebarVisible = sidebar.style.display !== 'none';
+        const isMiddleVisible = middle.style.display !== 'none';
+
+        // If the user is on the original state (with Articles and Content visible), do nothing
+        if (!isRssVisible && !isArticlesVisible) {
+            return; // Don't do anything if both sections are visible
+        }
+
+        // Check if the click happens on the blank space in the content area
+        if (!event.target.closest('.middle') && !event.target.closest('.sidebar') && event.target !== backButton) {
+            if (isRssVisible && !isArticlesVisible) {
+                // If RSS is visible and Articles is not, clicking should hide RSS and show Articles
+                sidebar.style.display = 'none';
+                middle.style.display = 'block';
+                backButton.textContent = "Back to RSS List"; // Update button text
+                isRssVisible = false;
+                isArticlesVisible = true;
+            } else if (!isRssVisible && isArticlesVisible) {
+                // If Articles section is visible, clicking should hide Articles and show RSS
+                middle.style.display = 'none';
+                sidebar.style.display = 'block';
+                backButton.textContent = "Back to Articles"; // Update button text
+                isRssVisible = true;
+                isArticlesVisible = false;
+            }
         }
     });
 
@@ -119,16 +212,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 <div>${content}</div>
                 ${link ? `<p><a href="${link}" target="_blank">Read full article</a></p>` : ''}
             `;
-
-            // Ensure any images inside the content are styled correctly
-            const images = articleDisplay.querySelectorAll("img");
-            images.forEach(img => {
-                img.style.display = 'block';
-                img.style.maxWidth = '100%';
-                img.style.height = 'auto';
-                img.style.margin = '0 auto';
-                img.style.objectFit = 'contain'; // Maintain aspect ratio and prevent overflow
-            });
         }
     });
 });

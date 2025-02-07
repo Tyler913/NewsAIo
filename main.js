@@ -14,7 +14,7 @@ let fetch;
 })();
 
 // Cache configuration
-const CACHE_DURATION = 30 * 24 * 60 * 60 * 1000; // 1 hour cache duration
+const CACHE_DURATION = 30 * 24 * 60 * 60 * 1000; // 30 days cache duration
 const CACHE_DIR = path.join(app.getPath("userData"), "rss_cache");
 
 // Ensure cache directory exists
