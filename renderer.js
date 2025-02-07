@@ -2,7 +2,7 @@ const originalLog = console.log;
 console.log = (level = "info", ...args) => {
     originalLog(...args);
     if (!(level === "error" || level === "warn" || level === "info")) {
-        window.electronAPI?.logWithLevel("error", "Invalid log level! Original message: " + args.join(" "));
+        window.electronAPI?.logWithLevel("error", "Invalid log level! Original message: " + level.toLocaleUpperCase + args.join(" "));
     } else {
         window.electronAPI?.logWithLevel(level, args.join(" "));
     }
@@ -80,7 +80,12 @@ document.addEventListener("DOMContentLoaded", function () {
             document.getElementById("articles-loading-indicator").innerText = "Articles (Loading...)";
             try {
                 console.log("info", `Fetching RSS feed from: ${url}`);
-                const feed = await window.electronAPI.fetchRss(url);
+                const startTime = Date.now();
+
+                const feed = await window.electronAPI.fetchRss(url);//开始加载
+                
+                const elapsed = Date.now() - startTime;
+                console.log("info",`RSS fetch time (include IPC): ${elapsed}ms`);
                 console.log("info", `Fetched RSS feed: ${feed.title} (${feed.items.length} items)`);
                 
                 document.querySelector('.middle h2').textContent = feed.title;

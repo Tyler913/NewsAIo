@@ -5,6 +5,7 @@ const path = require("node:path");
 const Parser = require('rss-parser');
 const parser = new Parser();
 const crypto = require('crypto'); // Add crypto module
+const {default: fetch} = require('node-fetch'); // 如果尚未安装，请 npm install node-fetch
 
 // Cache configuration
 const CACHE_DURATION = 30 * 24 * 60 * 60 * 1000; // 1 hour cache duration
