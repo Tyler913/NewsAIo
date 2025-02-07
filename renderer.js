@@ -112,22 +112,23 @@ document.addEventListener("DOMContentLoaded", function () {
             backButton.textContent = "Back to Articles"; // Correct the button text
             isRssVisible = true; // Track that RSS is visible
             isArticlesVisible = false; // Articles is not visible
+            console.log("info", "Showing RSS section above content");
         } 
-        // If both RSS and Articles are hidden, show Articles on top of Content, and toggle between them
+        else if(isSidebarVisible && !isMiddleVisible){
+            sidebar.style.display = 'none';
+            middle.style.display = 'block';
+            backButton.textContent = "Back to RSS List"; // Correct the button text
+            isRssVisible = false; // Track that RSS is invisible
+            isArticlesVisible = true; // Articles is visible
+            console.log("info", "Showing Articles section above content");
+        }
+        // If both RSS and Articles are hidden, show RSS on top of Content, and toggle between them
         else if (!isSidebarVisible && !isMiddleVisible) {
-            if (backButton.textContent === "Back to RSS List") {
-                // Show RSS section on top of content
-                sidebar.style.display = 'block';
-                backButton.textContent = "Back to Articles"; // Update button text
-                isRssVisible = true;
-                isArticlesVisible = false;
-            } else {
-                // Show Articles section above content
-                middle.style.display = 'block';
-                backButton.textContent = "Back to RSS List"; // Update button text
-                isArticlesVisible = true;
-                isRssVisible = false;
-            }
+            // Show RSS section on top of content
+            sidebar.style.display = 'block';
+            backButton.textContent = "Back to RSS List"; // Update button text
+            isRssVisible = true;
+            isArticlesVisible = false;
         }
     });
 
