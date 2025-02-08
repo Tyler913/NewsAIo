@@ -176,9 +176,10 @@ document.addEventListener("DOMContentLoaded", function () {
                 console.log("info", `Fetching RSS feed from: ${url}`);
                 const startTime = Date.now();
                 //关闭RSS源列表
+                if(sidebar.style.display == 'block' && middle.style.display == 'none'){
                 sidebar.style.display = 'none';
                 middle.style.display = 'block';
-                backButton.textContent = "Back to RSS List";
+                backButton.textContent = "Back to RSS List";}
 
                 const feed = await window.electronAPI.fetchRss(url);//开始加载
                 
