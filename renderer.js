@@ -175,6 +175,10 @@ document.addEventListener("DOMContentLoaded", function () {
             try {
                 console.log("info", `Fetching RSS feed from: ${url}`);
                 const startTime = Date.now();
+                //关闭RSS源列表
+                sidebar.style.display = 'none';
+                middle.style.display = 'block';
+                backButton.textContent = "Back to RSS List";
 
                 const feed = await window.electronAPI.fetchRss(url);//开始加载
                 
@@ -193,6 +197,8 @@ document.addEventListener("DOMContentLoaded", function () {
                     li.dataset.pubDate = item.pubDate;
                     articlesList.appendChild(li);
                 });
+
+                
             } catch (error) {
                 console.log("error", `Failed to fetch RSS: ${error.message}`);
                 articleDisplay.innerHTML = `<p>Error loading feed: ${error.message}</p>`;
