@@ -133,34 +133,34 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     // Function to hide the previously shown section when clicking on the content area
-    content.addEventListener('click', (event) => {
-        const isSidebarVisible = sidebar.style.display !== 'none';
-        const isMiddleVisible = middle.style.display !== 'none';
+    // content.addEventListener('click', (event) => {
+    //     const isSidebarVisible = sidebar.style.display !== 'none';
+    //     const isMiddleVisible = middle.style.display !== 'none';
 
-        // If the user is on the original state (with Articles and Content visible), do nothing
-        if (!isRssVisible && !isArticlesVisible) {
-            return; // Don't do anything if both sections are visible
-        }
+    //     // If the user is on the original state (with Articles and Content visible), do nothing
+    //     if (!isRssVisible && !isArticlesVisible) {
+    //         return; // Don't do anything if both sections are visible
+    //     }
 
-        // Check if the click happens on the blank space in the content area
-        if (!event.target.closest('.middle') && !event.target.closest('.sidebar') && event.target !== backButton) {
-            if (isRssVisible && !isArticlesVisible) {
-                // If RSS is visible and Articles is not, clicking should hide RSS and show Articles
-                sidebar.style.display = 'none';
-                middle.style.display = 'block';
-                backButton.textContent = "Back to RSS List"; // Update button text
-                isRssVisible = false;
-                isArticlesVisible = true;
-            } else if (!isRssVisible && isArticlesVisible) {
-                // If Articles section is visible, clicking should hide Articles and show RSS
-                middle.style.display = 'none';
-                sidebar.style.display = 'block';
-                backButton.textContent = "Back to Articles"; // Update button text
-                isRssVisible = true;
-                isArticlesVisible = false;
-            }
-        }
-    });
+    //     // Check if the click happens on the blank space in the content area
+    //     if (!event.target.closest('.middle') && !event.target.closest('.sidebar') && event.target !== backButton) {
+    //         if (isRssVisible && !isArticlesVisible) {
+    //             // If RSS is visible and Articles is not, clicking should hide RSS and show Articles
+    //             sidebar.style.display = 'none';
+    //             middle.style.display = 'block';
+    //             backButton.textContent = "Back to RSS List"; // Update button text
+    //             isRssVisible = false;
+    //             isArticlesVisible = true;
+    //         } else if (!isRssVisible && isArticlesVisible) {
+    //             // If Articles section is visible, clicking should hide Articles and show RSS
+    //             middle.style.display = 'none';
+    //             sidebar.style.display = 'block';
+    //             backButton.textContent = "Back to Articles"; // Update button text
+    //             isRssVisible = true;
+    //             isArticlesVisible = false;
+    //         }
+    //     }
+    // });
 
     // Original Application Logic
     const rssSources = document.getElementById("rss-sources");
