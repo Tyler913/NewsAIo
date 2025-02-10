@@ -15,26 +15,10 @@ document.addEventListener("DOMContentLoaded", function () {
     const sidebar = document.querySelector('.sidebar');
     const middle = document.querySelector('.middle');
     const content = document.querySelector('.content');
-    
-    const backButton = document.createElement('button');
-    backButton.textContent = "Back";
-    backButton.style.position = "absolute";
-    backButton.style.top = "10px";
-    backButton.style.right = "10px";
-    backButton.style.padding = "10px 20px";
-    backButton.style.backgroundColor = "#2c3e50";
-    backButton.style.color = "white";
-    backButton.style.border = "none";
-    backButton.style.borderRadius = "5px";
-    backButton.style.cursor = "pointer";
-    backButton.style.display = "none";  // Initially hide the button
+    const midButton = document.getElementById('middle-back-button');
+    const articleButton = document.getElementById('article-back-button');
 
-    content.appendChild(backButton);
-
-    // Keep track of the app's current state
-    let isRssVisible = false;
-    let isArticlesVisible = false;
-
+    //-----------------以下是UI逻辑-----------------
     // Handle resizing the left and right panels
     function createResizer(resizeElement, targetElement) {
         let startX, startWidth;
@@ -65,103 +49,66 @@ document.addEventListener("DOMContentLoaded", function () {
         resizeElement.addEventListener('mousedown', initDrag);
     }
 
-    createResizer(leftResize, sidebar);
-    createResizer(rightResize, middle);
+    //我试了，这个函数会覆盖sidebar和middle的resize
+    // createResizer(leftResize, sidebar);
+    // createResizer(rightResize, middle);
 
     // Handle window resizing to hide/show panels
     window.addEventListener('resize', () => {
         const windowWidth = window.innerWidth;
-
-        // Hide left panel if window is too narrow
-        if (windowWidth < 1200) {
-            sidebar.style.display = 'none';
-        } else {
-            sidebar.style.display = 'block';
-        }
-
-        // Hide middle panel if window is very narrow
-        if (windowWidth < 1000) {
-            middle.style.display = 'none';
-        } else {
-            middle.style.display = 'block';
-        }
-
-        toggleBackButton();
-    });
-
-    // Toggle back button visibility based on which section is visible
-    function toggleBackButton() {
         const isSidebarVisible = sidebar.style.display !== 'none';
         const isMiddleVisible = middle.style.display !== 'none';
+        const firstResizeWith = 1200;
+        const secondResizeWith = 800;
 
-        if (isSidebarVisible && isMiddleVisible) {
-            backButton.style.display = 'none'; // No back button when both are visible
-        } else {
-            backButton.style.display = 'block'; // Show back button when one or both are hidden
-        }
-    }
-
-    backButton.addEventListener('click', () => {
-        const isSidebarVisible = sidebar.style.display !== 'none';
-        const isMiddleVisible = middle.style.display !== 'none';
-
-        // If RSS is hidden, show it above the Articles section
-        if (!isSidebarVisible && isMiddleVisible) {
+        //究极屎山Resizer
+        if(windowWidth>=firstResizeWith){
+            //显示所有bar
             sidebar.style.display = 'block';
-            middle.style.display = 'none';
-            backButton.textContent = "Back to Articles"; // Correct the button text
-            isRssVisible = true; // Track that RSS is visible
-            isArticlesVisible = false; // Articles is not visible
-            console.log("info", "Showing RSS section above content");
-        } 
-        else if(isSidebarVisible && !isMiddleVisible){
+            middle.style.display = 'block';
+        }else if(windowWidth<firstResizeWith&&isSidebarVisible&&isMiddleVisible){
+            //默认情况，隐藏sidebar
             sidebar.style.display = 'none';
             middle.style.display = 'block';
-            backButton.textContent = "Back to RSS List"; // Correct the button text
-            isRssVisible = false; // Track that RSS is invisible
-            isArticlesVisible = true; // Articles is visible
-            console.log("info", "Showing Articles section above content");
+        }else if(windowWidth<secondResizeWith){
+            //隐藏所有bar
+            sidebar.style.display = 'none';
+            middle.style.display = 'none';
+        }else if(windowWidth<firstResizeWith&&windowWidth>=secondResizeWith){
+            //回弹middle
+            //未设置fix，如果只显示两个bar的时候恰巧是RSS和article content，那么会出现问题
+            //先不管了
+            sidebar.style.display = 'none';
+            middle.style.display = 'block';
         }
-        // If both RSS and Articles are hidden, show RSS on top of Content, and toggle between them
-        else if (!isSidebarVisible && !isMiddleVisible) {
-            // Show RSS section on top of content
-            sidebar.style.display = 'block';
-            backButton.textContent = "Back to RSS List"; // Update button text
-            isRssVisible = true;
-            isArticlesVisible = false;
+
+        //重置按钮显示
+        if(isSidebarVisible){
+            midButton.style.display = 'none';
+            articleButton.style.display = 'none';
+        }else if(isMiddleVisible&&!isSidebarVisible){
+            midButton.style.display = 'block';
+            articleButton.style.display = 'none';
+        }else if(!isMiddleVisible&&!isSidebarVisible){
+            midButton.style.display = 'none';
+            articleButton.style.display = 'block';
         }
+        
     });
 
-    // Function to hide the previously shown section when clicking on the content area
-    // content.addEventListener('click', (event) => {
-    //     const isSidebarVisible = sidebar.style.display !== 'none';
-    //     const isMiddleVisible = middle.style.display !== 'none';
+    midButton.addEventListener('click', () => {
+        sidebar.style.display = 'block';
+        middle.style.display = 'none';
+    });
 
-    //     // If the user is on the original state (with Articles and Content visible), do nothing
-    //     if (!isRssVisible && !isArticlesVisible) {
-    //         return; // Don't do anything if both sections are visible
-    //     }
+    articleButton.addEventListener('click', () => {
+        sidebar.style.display = 'none';
+        middle.style.display = 'block';
+        articleButton.style.display = 'none';
+        midButton.style.display = 'block';
+    });
 
-    //     // Check if the click happens on the blank space in the content area
-    //     if (!event.target.closest('.middle') && !event.target.closest('.sidebar') && event.target !== backButton) {
-    //         if (isRssVisible && !isArticlesVisible) {
-    //             // If RSS is visible and Articles is not, clicking should hide RSS and show Articles
-    //             sidebar.style.display = 'none';
-    //             middle.style.display = 'block';
-    //             backButton.textContent = "Back to RSS List"; // Update button text
-    //             isRssVisible = false;
-    //             isArticlesVisible = true;
-    //         } else if (!isRssVisible && isArticlesVisible) {
-    //             // If Articles section is visible, clicking should hide Articles and show RSS
-    //             middle.style.display = 'none';
-    //             sidebar.style.display = 'block';
-    //             backButton.textContent = "Back to Articles"; // Update button text
-    //             isRssVisible = true;
-    //             isArticlesVisible = false;
-    //         }
-    //     }
-    // });
-
+    //-----------------以下是应用逻辑-----------------
     // Original Application Logic
     const rssSources = document.getElementById("rss-sources");
     const articlesList = document.getElementById("articles");
@@ -179,7 +126,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 if(sidebar.style.display == 'block' && middle.style.display == 'none'){
                 sidebar.style.display = 'none';
                 middle.style.display = 'block';
-                backButton.textContent = "Back to RSS List";}
+                midButton.style.display = 'block';
+                }
 
                 const feed = await window.electronAPI.fetchRss(url);//开始加载
                 
@@ -211,6 +159,13 @@ document.addEventListener("DOMContentLoaded", function () {
     articlesList.addEventListener("click", (event) => {
         const target = event.target;
         if (target && target.tagName === "LI") {
+            //关闭文章列表
+            if(sidebar.style.display == 'none' && middle.style.display == 'block'){
+                sidebar.style.display = 'none';
+                middle.style.display = 'none';
+                articleButton.style.display = 'block';
+                //这里应该设置fix
+            }
             const content = target.dataset.content;
             const link = target.dataset.link;
             const pubDate = target.dataset.pubDate;

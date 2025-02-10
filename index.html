@@ -23,7 +23,10 @@
         <!-- Middle Zone: Article List -->
         <div class="zone middle">
             <div class="resize-handle" id="right-resize"></div>
-            <h2 id="articles-loading-indicator">Articles</h2>
+                <div class="button-title">
+                    <button id="middle-back-button" style="display: none;">Back</button>
+                    <h2 id="articles-loading-indicator">Articles</h2>
+                </div>
             <ul id="articles">
                 <li>Article 1 Title</li>
                 <li>Article 2 Title</li>
@@ -33,12 +36,13 @@
 
         <!-- Right Zone: Article Content -->
         <div class="zone content">
+            <button id="article-back-button" style="display: none;">Back</button>
             <h2>Article Content</h2>
             <div id="article-content">
                 <p>Please select an article from the list to view its content.</p>
             </div>
             <!-- Back Button added to content section -->
-            <button id="back-button" style="display: none;">Back</button>
+            
         </div>
     </div>
 
