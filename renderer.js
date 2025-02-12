@@ -54,46 +54,47 @@ document.addEventListener("DOMContentLoaded", function () {
     // createResizer(rightResize, middle);
 
     // Handle window resizing to hide/show panels
-    window.addEventListener('resize', () => {
-        const windowWidth = window.innerWidth;
-        const isSidebarVisible = sidebar.style.display !== 'none';
-        const isMiddleVisible = middle.style.display !== 'none';
-        const firstResizeWith = 1200;
-        const secondResizeWith = 800;
+// Corrected resize handler
+window.addEventListener('resize', () => {
+    const windowWidth = window.innerWidth;
+    const firstResizeWith = 1200;
+    const secondResizeWith = 800;
 
-        //究极屎山Resizer
-        //还有bug，windows吸附时会g
-        if(windowWidth>=firstResizeWith){
-            //显示所有bar
-            sidebar.style.display = 'block';
-            middle.style.display = 'block';
-        }else if(windowWidth<firstResizeWith&&isSidebarVisible&&isMiddleVisible){
-            //默认情况，隐藏sidebar
-            sidebar.style.display = 'none';
-            middle.style.display = 'block';
-        }else if(windowWidth<secondResizeWith){
-            //隐藏所有bar
-            sidebar.style.display = 'none';
-            middle.style.display = 'none';
-        }else if(windowWidth<firstResizeWith&&windowWidth>=secondResizeWith&&!isSidebarVisible){
-            //回弹middle
-            sidebar.style.display = 'none';
-            middle.style.display = 'block';
-        }
+    // Capture visibility BEFORE changes
+    const wasSidebarVisible = sidebar.style.display !== 'none';
+    const wasMiddleVisible = middle.style.display !== 'none';
 
-        //重置按钮显示
-        if(isSidebarVisible){
-            midButton.style.display = 'none';
-            articleButton.style.display = 'none';
-        }else if(isMiddleVisible&&!isSidebarVisible){
-            midButton.style.display = 'block';
-            articleButton.style.display = 'none';
-        }else if(!isMiddleVisible&&!isSidebarVisible){
-            midButton.style.display = 'none';
-            articleButton.style.display = 'block';
-        }
-        
-    });
+    // Update panel visibility based on window width
+    if (windowWidth >= firstResizeWith) {
+        sidebar.style.display = 'block';
+        middle.style.display = 'block';
+    } else if (windowWidth < firstResizeWith && wasSidebarVisible && wasMiddleVisible) {
+        sidebar.style.display = 'none';
+        middle.style.display = 'block';
+    } else if (windowWidth < secondResizeWith) {
+        sidebar.style.display = 'none';
+        middle.style.display = 'none';
+    } else if (windowWidth < firstResizeWith && windowWidth >= secondResizeWith && !wasSidebarVisible) {
+        sidebar.style.display = 'none';
+        middle.style.display = 'block';
+    }
+
+    // Get UPDATED visibility after adjustments
+    const isSidebarVisible = sidebar.style.display !== 'none';
+    const isMiddleVisible = middle.style.display !== 'none';
+
+    // Update buttons based on CURRENT visibility
+    if (isSidebarVisible) {
+        midButton.style.display = 'none';
+        articleButton.style.display = 'none';
+    } else if (isMiddleVisible && !isSidebarVisible) {
+        midButton.style.display = 'block';
+        articleButton.style.display = 'none';
+    } else if (!isMiddleVisible && !isSidebarVisible) {
+        midButton.style.display = 'none';
+        articleButton.style.display = 'block';
+    }
+});
 
     midButton.addEventListener('click', () => {
         sidebar.style.display = 'block';
