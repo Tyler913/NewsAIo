@@ -62,6 +62,7 @@ document.addEventListener("DOMContentLoaded", function () {
         const secondResizeWith = 800;
 
         //究极屎山Resizer
+        //还有bug，windows吸附时会g
         if(windowWidth>=firstResizeWith){
             //显示所有bar
             sidebar.style.display = 'block';
@@ -74,10 +75,8 @@ document.addEventListener("DOMContentLoaded", function () {
             //隐藏所有bar
             sidebar.style.display = 'none';
             middle.style.display = 'none';
-        }else if(windowWidth<firstResizeWith&&windowWidth>=secondResizeWith){
+        }else if(windowWidth<firstResizeWith&&windowWidth>=secondResizeWith&&!isSidebarVisible){
             //回弹middle
-            //未设置fix，如果只显示两个bar的时候恰巧是RSS和article content，那么会出现问题
-            //先不管了
             sidebar.style.display = 'none';
             middle.style.display = 'block';
         }
@@ -164,7 +163,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 sidebar.style.display = 'none';
                 middle.style.display = 'none';
                 articleButton.style.display = 'block';
-                //这里应该设置fix
             }
             const content = target.dataset.content;
             const link = target.dataset.link;
