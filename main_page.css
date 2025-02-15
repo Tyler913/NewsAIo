@@ -34,6 +34,17 @@ body.dark-mode li {
     color: #ddd;
 }
 
+/* Dark Mode for Article Content */
+body.dark-mode #article-content {
+    background-color: #222;
+    border: 1px solid #555;
+    color: #ccc;
+}
+
+body.dark-mode #article-content a {
+    color: #88c;
+}
+
 /* (The rest of your existing CSS remains unchanged) */
 @import url("https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap");
 
