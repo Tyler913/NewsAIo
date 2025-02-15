@@ -13,9 +13,7 @@
                 <div class="resize-handle" id="left-resize"></div>
                 <h2>RSS</h2>
                 <!-- New Add Feed button -->
-                <button id="add-rss-button" class="add-feed-button">
-                    Add
-                </button>
+                <button id="add-rss-button" class="add-feed-button">Add</button>
                 <ul id="rss-sources">
                     <!-- RSS feeds will be loaded here -->
                 </ul>
@@ -31,9 +29,7 @@
                     <h2 id="articles-loading-indicator">Articles</h2>
                 </div>
                 <ul id="articles">
-                    <!-- <li>Article 1 Title</li>
-                    <li>Article 2 Title</li>
-                    <li>Article 3 Title</li> -->
+                    <!-- Content will be loaded here -->
                     Click on the RSS to start!
                 </ul>
             </div>
@@ -71,6 +67,13 @@
                     style="display: none; color: red; margin-top: 10px"
                 ></div>
             </div>
+        </div>
+
+        <!-- Custom Context Menu for RSS feed deletion -->
+        <div id="context-menu" class="context-menu">
+            <ul>
+                <li id="delete-feed">Delete</li>
+            </ul>
         </div>
 
         <script src="renderer.js"></script>
