@@ -14,13 +14,53 @@ let fetch;
 })();
 
 // Cache configuration
-const CACHE_DURATION = 6 * 60 * 60 * 1000; // 30 days cache duration
+const CACHE_DURATION = 6 * 60 * 60 * 1000; // 6 hours cache duration
 const CACHE_DIR = path.join(app.getPath("userData"), "rss_cache");
 
 // Ensure cache directory exists
 if (!fs.existsSync(CACHE_DIR)) {
     fs.mkdirSync(CACHE_DIR, { recursive: true });
 }
+
+// ---------- Persistent RSS Sources -------------
+const SOURCES_FILE = path.join(app.getPath("userData"), "rss_sources.json");
+const DEFAULT_SOURCES = [
+    { title: "极客公园", url: "http://mainssl.geekpark.net/rss.rss" },
+    { title: "36Ker", url: "https://36kr.com/feed" },
+];
+
+if (!fs.existsSync(SOURCES_FILE)) {
+    fs.writeFileSync(
+        SOURCES_FILE,
+        JSON.stringify(DEFAULT_SOURCES, null, 2),
+        "utf-8"
+    );
+}
+
+ipcMain.handle("get-rss-sources", async () => {
+    try {
+        const data = fs.readFileSync(SOURCES_FILE, "utf-8");
+        return JSON.parse(data);
+    } catch (error) {
+        console.error("Failed to read sources file:", error);
+        return DEFAULT_SOURCES;
+    }
+});
+
+ipcMain.handle("save-rss-sources", async (event, sources) => {
+    try {
+        fs.writeFileSync(
+            SOURCES_FILE,
+            JSON.stringify(sources, null, 2),
+            "utf-8"
+        );
+        return true;
+    } catch (error) {
+        console.error("Failed to save sources file:", error);
+        return false;
+    }
+});
+// -----------------------------------------------
 
 const createWindow = () => {
     const win = new BrowserWindow({
@@ -59,8 +99,6 @@ ipcMain.on("log-with-level", (_, { level, message }) => {
     console.log(`[Renderer][${level}] ${message}`);
 });
 
-// --- Removed the first duplicate handler for 'fetch-rss' ---
-
 // Add RSS handler with caching
 ipcMain.handle("fetch-rss", async (_, url) => {
     const hash = crypto.createHash("md5").update(url).digest("hex");
@@ -96,11 +134,13 @@ ipcMain.handle("fetch-rss", async (_, url) => {
                     link: item.link,
                     pubDate: item.pubDate,
                     // If the feed provides an enclosure with an image
-                    image: item.enclosure && item.enclosure.url ? item.enclosure.url : null,
+                    image:
+                        item.enclosure && item.enclosure.url
+                            ? item.enclosure.url
+                            : null,
                 })),
             },
         };
-        
 
         // Update cache
         fs.writeFileSync(cachePath, JSON.stringify(dataToCache), "utf-8");
@@ -114,4 +154,3 @@ ipcMain.handle("fetch-rss", async (_, url) => {
         throw error;
     }
 });
-

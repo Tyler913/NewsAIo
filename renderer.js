@@ -23,8 +23,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const midButton = document.getElementById("middle-back-button");
     const articleButton = document.getElementById("article-back-button");
 
-    //-----------------以下是UI逻辑-----------------
-    // Handle resizing the left and right panels
+    // ----------------- UI Resizing Logic -----------------
     function createResizer(resizeElement, targetElement) {
         let startX, startWidth;
 
@@ -54,21 +53,17 @@ document.addEventListener("DOMContentLoaded", function () {
         resizeElement.addEventListener("mousedown", initDrag);
     }
 
-    // 我试了，这个函数会覆盖sidebar和middle的resize
     // createResizer(leftResize, sidebar);
     // createResizer(rightResize, middle);
 
-    // Handle window resizing to hide/show panels
     window.addEventListener("resize", () => {
         const windowWidth = window.innerWidth;
         const firstResizeWith = 1200;
         const secondResizeWith = 800;
 
-        // Capture visibility BEFORE changes
         const wasSidebarVisible = sidebar.style.display !== "none";
         const wasMiddleVisible = middle.style.display !== "none";
 
-        // Update panel visibility based on window width
         if (windowWidth >= firstResizeWith) {
             sidebar.style.display = "block";
             middle.style.display = "block";
@@ -91,11 +86,9 @@ document.addEventListener("DOMContentLoaded", function () {
             middle.style.display = "block";
         }
 
-        // Get UPDATED visibility after adjustments
         const isSidebarVisible = sidebar.style.display !== "none";
         const isMiddleVisible = middle.style.display !== "none";
 
-        // Update buttons based on CURRENT visibility
         if (isSidebarVisible) {
             midButton.style.display = "none";
             articleButton.style.display = "none";
@@ -120,11 +113,27 @@ document.addEventListener("DOMContentLoaded", function () {
         midButton.style.display = "block";
     });
 
-    //-----------------以下是应用逻辑-----------------
-    // Original Application Logic
+    // ----------------- Application Logic -----------------
     const rssSources = document.getElementById("rss-sources");
     const articlesList = document.getElementById("articles");
     const articleDisplay = document.getElementById("article-content");
+
+    // Load stored RSS sources on startup
+    async function loadRssSources() {
+        try {
+            const sources = await window.electronAPI.getRssSources();
+            rssSources.innerHTML = "";
+            sources.forEach((source) => {
+                const li = document.createElement("li");
+                li.textContent = source.title;
+                li.dataset.url = source.url;
+                rssSources.appendChild(li);
+            });
+        } catch (error) {
+            console.error("Failed to load RSS sources:", error);
+        }
+    }
+    loadRssSources();
 
     rssSources.addEventListener("click", async (event) => {
         const target = event.target;
@@ -135,7 +144,6 @@ document.addEventListener("DOMContentLoaded", function () {
             try {
                 console.log("info", `Fetching RSS feed from: ${url}`);
                 const startTime = Date.now();
-                // 关闭RSS源列表
                 if (
                     sidebar.style.display == "block" &&
                     middle.style.display == "none"
@@ -145,8 +153,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     midButton.style.display = "block";
                 }
 
-                const feed = await window.electronAPI.fetchRss(url); // 开始加载
-
+                const feed = await window.electronAPI.fetchRss(url);
                 const elapsed = Date.now() - startTime;
                 console.log(
                     "info",
@@ -180,7 +187,6 @@ document.addEventListener("DOMContentLoaded", function () {
     articlesList.addEventListener("click", (event) => {
         const target = event.target;
         if (target && target.tagName === "LI") {
-            // 关闭文章列表
             if (
                 sidebar.style.display == "none" &&
                 middle.style.display == "block"
@@ -194,24 +200,22 @@ document.addEventListener("DOMContentLoaded", function () {
             const pubDate = target.dataset.pubDate;
 
             articleDisplay.innerHTML = `
-                ${
-                    pubDate
-                        ? `<p><small>${new Date(
-                            pubDate
-                        ).toLocaleString()}</small></p>`
-                        : ""
-                }
-                <div>${content}</div>
-                ${
-                    link
-                        ? `<p><a href="${link}" target="_blank">Read full article</a></p>`
-                        : ""
-                }
-            `;
+        ${
+            pubDate
+                ? `<p><small>${new Date(pubDate).toLocaleString()}</small></p>`
+                : ""
+        }
+        <div>${content}</div>
+        ${
+            link
+                ? `<p><a href="${link}" target="_blank">Read full article</a></p>`
+                : ""
+        }
+      `;
         }
     });
 
-    //----------------- New Code for Adding a New RSS Feed -----------------
+    // ----------------- New Code for Adding a New RSS Feed -----------------
     const addRssButton = document.getElementById("add-rss-button");
     const addFeedModal = document.getElementById("add-feed-modal");
     const modalCloseButton = document.getElementById("modal-close-button");
@@ -248,13 +252,18 @@ document.addEventListener("DOMContentLoaded", function () {
             return;
         }
         try {
-            // Call fetchRss to validate the RSS feed
+            // Validate the RSS feed by fetching it
             const feed = await window.electronAPI.fetchRss(url);
-            // Create a new <li> element in the sidebar for the new feed
             const li = document.createElement("li");
             li.textContent = feed.title || url;
             li.dataset.url = url;
             rssSources.appendChild(li);
+
+            // Update persistent sources: load current sources, add new feed, and save.
+            const sources = await window.electronAPI.getRssSources();
+            sources.push({ title: feed.title || url, url: url });
+            await window.electronAPI.saveRssSources(sources);
+
             closeModal();
         } catch (error) {
             modalError.textContent = "Invalid RSS feed. Please try again.";
@@ -262,7 +271,6 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 
-    // Allow pressing Enter to submit the URL
     rssUrlInput.addEventListener("keypress", function (e) {
         if (e.key === "Enter") {
             submitRssButton.click();
