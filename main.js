@@ -1,10 +1,9 @@
-const { ipcMain } = require("electron");
+const { ipcMain, app, nativeTheme, BrowserWindow } = require("electron");
 const fs = require("fs");
-const { app, BrowserWindow } = require("electron/main");
 const path = require("node:path");
 const Parser = require("rss-parser");
 const parser = new Parser();
-const crypto = require("crypto"); // Add crypto module
+const crypto = require("crypto");
 
 // Change this line to dynamic import
 let fetch;
@@ -57,6 +56,47 @@ ipcMain.handle("save-rss-sources", async (event, sources) => {
         return true;
     } catch (error) {
         console.error("Failed to save sources file:", error);
+        return false;
+    }
+});
+// -----------------------------------------------
+
+// ---------- Persistent Settings --------------
+// Use system setting as the default for dark mode.
+const SETTINGS_FILE = path.join(app.getPath("userData"), "settings.json");
+const DEFAULT_SETTINGS = {
+    darkMode: nativeTheme.shouldUseDarkColors,
+    fontScale: 1.0,
+};
+
+if (!fs.existsSync(SETTINGS_FILE)) {
+    fs.writeFileSync(
+        SETTINGS_FILE,
+        JSON.stringify(DEFAULT_SETTINGS, null, 2),
+        "utf-8"
+    );
+}
+
+ipcMain.handle("get-settings", async () => {
+    try {
+        const data = fs.readFileSync(SETTINGS_FILE, "utf-8");
+        return JSON.parse(data);
+    } catch (error) {
+        console.error("Failed to read settings file:", error);
+        return DEFAULT_SETTINGS;
+    }
+});
+
+ipcMain.handle("save-settings", async (event, settings) => {
+    try {
+        fs.writeFileSync(
+            SETTINGS_FILE,
+            JSON.stringify(settings, null, 2),
+            "utf-8"
+        );
+        return true;
+    } catch (error) {
+        console.error("Failed to save settings file:", error);
         return false;
     }
 });

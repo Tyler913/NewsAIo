@@ -14,6 +14,61 @@ console.log = (level = "info", ...args) => {
 };
 
 document.addEventListener("DOMContentLoaded", function () {
+    // ----------------- New Settings Code -----------------
+    let userSettings = { darkMode: false, fontScale: 1.0 };
+
+    async function loadSettings() {
+        try {
+            const settings = await window.electronAPI.getSettings();
+            userSettings = settings;
+        } catch (error) {
+            console.error("Failed to load settings, using defaults.", error);
+        }
+        applySettings();
+    }
+
+    function applySettings() {
+        // Update dark mode
+        if (userSettings.darkMode) {
+            document.body.classList.add("dark-mode");
+            darkModeToggle.textContent = "Light Mode";
+        } else {
+            document.body.classList.remove("dark-mode");
+            darkModeToggle.textContent = "Dark Mode";
+        }
+        // Update overall font scale
+        document.body.style.fontSize = userSettings.fontScale + "em";
+    }
+
+    const darkModeToggle = document.getElementById("dark-mode-toggle");
+    const fontIncrease = document.getElementById("font-increase");
+    const fontDecrease = document.getElementById("font-decrease");
+
+    darkModeToggle.addEventListener("click", async () => {
+        userSettings.darkMode = !userSettings.darkMode;
+        applySettings();
+        await window.electronAPI.saveSettings(userSettings);
+    });
+
+    fontIncrease.addEventListener("click", async () => {
+        userSettings.fontScale =
+            Math.round((parseFloat(userSettings.fontScale) + 0.1) * 10) / 10;
+        applySettings();
+        await window.electronAPI.saveSettings(userSettings);
+    });
+
+    fontDecrease.addEventListener("click", async () => {
+        userSettings.fontScale = Math.max(
+            0.5,
+            Math.round((parseFloat(userSettings.fontScale) - 0.1) * 10) / 10
+        );
+        applySettings();
+        await window.electronAPI.saveSettings(userSettings);
+    });
+
+    loadSettings();
+    // -------------------------------------------------------
+
     // Resizable Panels Logic
     const leftResize = document.getElementById("left-resize");
     const rightResize = document.getElementById("right-resize");
