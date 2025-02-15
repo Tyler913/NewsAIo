@@ -1,53 +1,81 @@
 <!DOCTYPE html>
 <html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <title>News AIo</title>
+        <link rel="stylesheet" href="main_page.css" />
+    </head>
 
-<head>
-    <meta charset="UTF-8" />
-    <title>News AIo</title>
-    <link rel="stylesheet" href="main_page.css">
-</head>
+    <body>
+        <div class="container">
+            <!-- Left Zone: RSS Sources -->
+            <div class="zone sidebar">
+                <div class="resize-handle" id="left-resize"></div>
+                <h2>RSS</h2>
+                <!-- New Add Feed button -->
+                <button id="add-rss-button" class="add-feed-button">
+                    Add
+                </button>
+                <ul id="rss-sources">
+                    <li data-url="http://mainssl.geekpark.net/rss.rss">
+                        极客公园
+                    </li>
+                    <li data-url="https://36kr.com/feed">36Ker</li>
+                    <!-- <li>Source 3</li> -->
+                </ul>
+            </div>
 
-<body>
-    <div class="container">
-        <!-- Left Zone: RSS Sources -->
-        <div class="zone sidebar">
-            <div class="resize-handle" id="left-resize"></div>
-            <h2>RSS</h2>
-            <ul id="rss-sources">
-                <li data-url="http://mainssl.geekpark.net/rss.rss">极客公园</li>
-                <li data-url="https://36kr.com/feed">36Ker</li>
-                <li>Source 3</li>
-            </ul>
-        </div>
-
-        <!-- Middle Zone: Article List -->
-        <div class="zone middle">
-            <div class="resize-handle" id="right-resize"></div>
+            <!-- Middle Zone: Article List -->
+            <div class="zone middle">
+                <div class="resize-handle" id="right-resize"></div>
                 <div class="button-title">
-                    <button id="middle-back-button" style="display: none;">Back</button>
+                    <button id="middle-back-button" style="display: none">
+                        Back
+                    </button>
                     <h2 id="articles-loading-indicator">Articles</h2>
                 </div>
-            <ul id="articles">
-                <li>Article 1 Title</li>
-                <li>Article 2 Title</li>
-                <li>Article 3 Title</li>
-            </ul>
-        </div>
-
-        <!-- Right Zone: Article Content -->
-        <div class="zone content">
-            <button id="article-back-button" style="display: none;">Back</button>
-            <h2>Article Content</h2>
-            <div id="article-content">
-                <p>Please select an article from the list to view its content.</p>
+                <ul id="articles">
+                    <!-- <li>Article 1 Title</li>
+                    <li>Article 2 Title</li>
+                    <li>Article 3 Title</li> -->
+                </ul>
             </div>
-            <!-- Back Button added to content section -->
-            
+
+            <!-- Right Zone: Article Content -->
+            <div class="zone content">
+                <button id="article-back-button" style="display: none">
+                    Back
+                </button>
+                <h2>Article Content</h2>
+                <div id="article-content">
+                    <p>
+                        Please select an article from the list to view its
+                        content.
+                    </p>
+                </div>
+            </div>
         </div>
-    </div>
 
-    <script src="renderer.js"></script>
-</body>
+        <!-- Modal for adding new RSS feed -->
+        <div id="add-feed-modal" class="modal">
+            <div class="modal-content">
+                <span class="close-button" id="modal-close-button"
+                    >&times;</span
+                >
+                <h2>Add New RSS Feed</h2>
+                <input
+                    type="text"
+                    id="rss-url-input"
+                    placeholder="Enter RSS feed URL"
+                />
+                <button id="submit-rss-button">Add Feed</button>
+                <div
+                    id="modal-error"
+                    style="display: none; color: red; margin-top: 10px"
+                ></div>
+            </div>
+        </div>
 
+        <script src="renderer.js"></script>
+    </body>
 </html>
-
