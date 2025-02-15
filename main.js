@@ -14,7 +14,7 @@ let fetch;
 })();
 
 // Cache configuration
-const CACHE_DURATION = 30 * 24 * 60 * 60 * 1000; // 30 days cache duration
+const CACHE_DURATION = 6 * 60 * 60 * 1000; // 30 days cache duration
 const CACHE_DIR = path.join(app.getPath("userData"), "rss_cache");
 
 // Ensure cache directory exists
@@ -95,9 +95,12 @@ ipcMain.handle("fetch-rss", async (_, url) => {
                     content: item.content || item.description,
                     link: item.link,
                     pubDate: item.pubDate,
+                    // If the feed provides an enclosure with an image
+                    image: item.enclosure && item.enclosure.url ? item.enclosure.url : null,
                 })),
             },
         };
+        
 
         // Update cache
         fs.writeFileSync(cachePath, JSON.stringify(dataToCache), "utf-8");
