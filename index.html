@@ -31,9 +31,8 @@
                     <h2 id="articles-loading-indicator">Articles</h2>
                 </div>
                 <ul id="articles">
-                    <li>Article 1 Title</li>
-                    <li>Article 2 Title</li>
-                    <li>Article 3 Title</li>
+                    <!-- Content will be loaded here -->
+                    Click on the RSS to start!
                 </ul>
             </div>
 
@@ -43,7 +42,15 @@
                     <button id="article-back-button" style="display: none">
                         Back
                     </button>
-                    <h2>Article Content</h2>
+                <!-- New header for article title and settings -->
+                <div class="content-header">
+                        <h2>Article Content</h2>
+                    <div class="settings-buttons">
+                        <button id="dark-mode-toggle">Dark Mode</button>
+                        <button id="font-decrease">A–</button>
+                        <button id="font-increase">A+</button>
+                    </div>
+                </div>
                 </div>
                 <div id="article-content">
                     <p>
@@ -72,6 +79,13 @@
                     style="display: none; color: red; margin-top: 10px"
                 ></div>
             </div>
+        </div>
+
+        <!-- Custom Context Menu for RSS feed deletion -->
+        <div id="context-menu" class="context-menu">
+            <ul>
+                <li id="delete-feed">Delete</li>
+            </ul>
         </div>
 
         <script src="renderer.js"></script>

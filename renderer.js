@@ -14,6 +14,61 @@ console.log = (level = "info", ...args) => {
 };
 
 document.addEventListener("DOMContentLoaded", function () {
+    // ----------------- New Settings Code -----------------
+    let userSettings = { darkMode: false, fontScale: 1.0 };
+
+    async function loadSettings() {
+        try {
+            const settings = await window.electronAPI.getSettings();
+            userSettings = settings;
+        } catch (error) {
+            console.error("Failed to load settings, using defaults.", error);
+        }
+        applySettings();
+    }
+
+    function applySettings() {
+        // Update dark mode
+        if (userSettings.darkMode) {
+            document.body.classList.add("dark-mode");
+            darkModeToggle.textContent = "Light Mode";
+        } else {
+            document.body.classList.remove("dark-mode");
+            darkModeToggle.textContent = "Dark Mode";
+        }
+        // Update overall font scale
+        document.body.style.fontSize = userSettings.fontScale + "em";
+    }
+
+    const darkModeToggle = document.getElementById("dark-mode-toggle");
+    const fontIncrease = document.getElementById("font-increase");
+    const fontDecrease = document.getElementById("font-decrease");
+
+    darkModeToggle.addEventListener("click", async () => {
+        userSettings.darkMode = !userSettings.darkMode;
+        applySettings();
+        await window.electronAPI.saveSettings(userSettings);
+    });
+
+    fontIncrease.addEventListener("click", async () => {
+        userSettings.fontScale =
+            Math.round((parseFloat(userSettings.fontScale) + 0.1) * 10) / 10;
+        applySettings();
+        await window.electronAPI.saveSettings(userSettings);
+    });
+
+    fontDecrease.addEventListener("click", async () => {
+        userSettings.fontScale = Math.max(
+            0.5,
+            Math.round((parseFloat(userSettings.fontScale) - 0.1) * 10) / 10
+        );
+        applySettings();
+        await window.electronAPI.saveSettings(userSettings);
+    });
+
+    loadSettings();
+    // -------------------------------------------------------
+
     // Resizable Panels Logic
     const leftResize = document.getElementById("left-resize");
     const rightResize = document.getElementById("right-resize");
@@ -215,7 +270,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 
-    // ----------------- New Code for Adding a New RSS Feed -----------------
+    // ----------------- New Code for Adding a New RSS Feed with Duplicate Check -----------------
     const addRssButton = document.getElementById("add-rss-button");
     const addFeedModal = document.getElementById("add-feed-modal");
     const modalCloseButton = document.getElementById("modal-close-button");
@@ -251,6 +306,13 @@ document.addEventListener("DOMContentLoaded", function () {
             modalError.style.display = "block";
             return;
         }
+        // Check for duplicate feed before adding
+        const existingSources = await window.electronAPI.getRssSources();
+        if (existingSources.some((source) => source.url === url)) {
+            modalError.textContent = "This RSS feed is already added.";
+            modalError.style.display = "block";
+            return;
+        }
         try {
             // Validate the RSS feed by fetching it
             const feed = await window.electronAPI.fetchRss(url);
@@ -275,5 +337,42 @@ document.addEventListener("DOMContentLoaded", function () {
         if (e.key === "Enter") {
             submitRssButton.click();
         }
+    });
+
+    // ----------------- New Code for Deleting an RSS Feed via Right-Click -----------------
+    let currentFeedItem = null;
+    const contextMenu = document.getElementById("context-menu");
+    const deleteFeedOption = document.getElementById("delete-feed");
+
+    rssSources.addEventListener("contextmenu", (event) => {
+        event.preventDefault();
+        const target = event.target;
+        if (target && target.tagName === "LI") {
+            currentFeedItem = target;
+            contextMenu.style.top = event.clientY + "px";
+            contextMenu.style.left = event.clientX + "px";
+            contextMenu.style.display = "block";
+        } else {
+            contextMenu.style.display = "none";
+        }
+    });
+
+    document.addEventListener("click", () => {
+        contextMenu.style.display = "none";
+    });
+
+    deleteFeedOption.addEventListener("click", async () => {
+        if (!currentFeedItem) return;
+        const urlToDelete = currentFeedItem.dataset.url;
+        // Remove the feed from the DOM
+        currentFeedItem.remove();
+        // Update persistent sources
+        const sources = await window.electronAPI.getRssSources();
+        const updatedSources = sources.filter(
+            (source) => source.url !== urlToDelete
+        );
+        await window.electronAPI.saveRssSources(updatedSources);
+        currentFeedItem = null;
+        contextMenu.style.display = "none";
     });
 });

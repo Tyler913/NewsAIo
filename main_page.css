@@ -1,3 +1,51 @@
+/* New header for content zone */
+.content-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.settings-buttons button {
+    margin-left: 10px;
+    padding: 5px 10px;
+    font-size: 0.9em;
+    cursor: pointer;
+}
+
+/* Dark Mode Styles */
+body.dark-mode {
+    background: #222;
+    color: #ccc;
+}
+
+body.dark-mode .zone {
+    background: #333;
+    box-shadow: none;
+}
+
+body.dark-mode h2 {
+    border-color: #ccc;
+    color: #eee;
+}
+
+body.dark-mode li {
+    background-color: #444;
+    color: #ddd;
+}
+
+/* Dark Mode for Article Content */
+body.dark-mode #article-content {
+    background-color: #222;
+    border: 1px solid #555;
+    color: #ccc;
+}
+
+body.dark-mode #article-content a {
+    color: #88c;
+}
+
+/* (The rest of your existing CSS remains unchanged) */
 @import url("https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap");
 
 * {
@@ -223,4 +271,31 @@ li:active {
 
 .add-feed-button:hover {
     background-color: #34495e;
+}
+
+/* ---------------- Custom Context Menu Styles ---------------- */
+.context-menu {
+    display: none;
+    position: absolute;
+    z-index: 1000;
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.2);
+    padding: 0;
+}
+
+.context-menu ul {
+    list-style: none;
+    margin: 0;
+    padding: 5px 0;
+}
+
+.context-menu li {
+    padding: 8px 12px;
+    cursor: pointer;
+}
+
+.context-menu li:hover {
+    background-color: #f2f2f2;
 }
