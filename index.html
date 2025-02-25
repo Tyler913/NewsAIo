@@ -11,11 +11,11 @@
             <!-- Left Zone: RSS Sources -->
             <div class="zone sidebar">
                 <div class="resize-handle" id="left-resize"></div>
-                <h2>RSS</h2>
-                <!-- New Add Feed button -->
-                <button id="add-rss-button" class="add-feed-button">
-                    + Add RSS Feed
-                </button>
+                <div class="header">
+                    <h2>RSS</h2>
+                    <!-- New Add Feed button -->
+                    <button id="add-rss-button" class="add-feed-button">+</button>
+                </div>
                 <ul id="rss-sources">
                     <!-- RSS feeds will be loaded here -->
                 </ul>
@@ -24,7 +24,7 @@
             <!-- Middle Zone: Article List -->
             <div class="zone middle">
                 <div class="resize-handle" id="right-resize"></div>
-                <div class="button-title">
+                <div class="header">
                     <button id="middle-back-button" style="display: none">
                         Back
                     </button>
@@ -39,10 +39,12 @@
 
             <!-- Right Zone: Article Content -->
             <div class="zone content">
-                <button id="article-back-button" style="display: none">
-                    Back
-                </button>
-                <h2>Article Content</h2>
+                <div class="header">
+                    <button id="article-back-button" style="display: none">
+                        Back
+                    </button>
+                    <h2>Article Content</h2>
+                </div>
                 <div id="article-content">
                     <p>
                         Please select an article from the list to view its
