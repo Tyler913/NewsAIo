@@ -61,6 +61,38 @@ body.dark-mode .settings-buttons button:hover {
     background-color: rgba(255, 255, 255, 0.1);
 }
 
+/* -------------------------- */
+/* NEW: Dark mode for the modal */
+body.dark-mode .modal-content {
+    background-color: #333;
+    color: #ddd;
+    border: 1px solid #555;
+}
+
+/* Dark mode for modal input and button */
+body.dark-mode .modal-content input[type="text"] {
+    background-color: #444;
+    color: #ddd;
+    border: 1px solid #888;
+}
+
+body.dark-mode .modal-content button {
+    background-color: #919191;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+}
+
+/* Close button in dark mode */
+body.dark-mode .close-button {
+    color: #ddd;
+}
+body.dark-mode .close-button:hover,
+body.dark-mode .close-button:focus {
+    color: #fff;
+}
+/* -------------------------- */
+
 /* Rest of original CSS */
 @import url("https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap");
 
@@ -237,7 +269,7 @@ li:active {
 .modal {
     display: none;
     position: fixed;
-    z-index: 10;
+    z-index: 10000; /* ensure modal is on top */
     left: 0;
     top: 0;
     width: 100%;
@@ -285,7 +317,7 @@ li:active {
 }
 
 .add-feed-button:hover {
-    background-color: #34495e;
+    background-color: #8795a4;
 }
 
 .context-menu {
