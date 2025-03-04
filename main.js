@@ -1,9 +1,6 @@
 const { ipcMain, app, nativeTheme, BrowserWindow } = require("electron");
 const fs = require("fs");
 const path = require("node:path");
-const Parser = require("rss-parser");
-const parser = new Parser();
-const crypto = require("crypto");
 
 // Change this line to dynamic import
 let fetch;
@@ -12,57 +9,7 @@ let fetch;
     fetch = fetchModule;
 })();
 
-// Cache configuration
-const CACHE_DURATION = 6 * 60 * 60 * 1000; // 6 hours cache duration
-const CACHE_DIR = path.join(app.getPath("userData"), "rss_cache");
-
-// Ensure cache directory exists
-if (!fs.existsSync(CACHE_DIR)) {
-    fs.mkdirSync(CACHE_DIR, { recursive: true });
-}
-
-// ---------- Persistent RSS Sources -------------
-const SOURCES_FILE = path.join(app.getPath("userData"), "rss_sources.json");
-const DEFAULT_SOURCES = [
-    { title: "极客公园", url: "http://mainssl.geekpark.net/rss.rss" },
-    { title: "36Ker", url: "https://36kr.com/feed" },
-];
-
-if (!fs.existsSync(SOURCES_FILE)) {
-    fs.writeFileSync(
-        SOURCES_FILE,
-        JSON.stringify(DEFAULT_SOURCES, null, 2),
-        "utf-8"
-    );
-}
-
-ipcMain.handle("get-rss-sources", async () => {
-    try {
-        const data = fs.readFileSync(SOURCES_FILE, "utf-8");
-        return JSON.parse(data);
-    } catch (error) {
-        console.error("Failed to read sources file:", error);
-        return DEFAULT_SOURCES;
-    }
-});
-
-ipcMain.handle("save-rss-sources", async (event, sources) => {
-    try {
-        fs.writeFileSync(
-            SOURCES_FILE,
-            JSON.stringify(sources, null, 2),
-            "utf-8"
-        );
-        return true;
-    } catch (error) {
-        console.error("Failed to save sources file:", error);
-        return false;
-    }
-});
-// -----------------------------------------------
-
-// ---------- Persistent Settings --------------
-// Use system setting as the default for dark mode.
+// ---------- Persistent Settings (unchanged) ----------
 const SETTINGS_FILE = path.join(app.getPath("userData"), "settings.json");
 const DEFAULT_SETTINGS = {
     darkMode: nativeTheme.shouldUseDarkColors,
@@ -100,9 +47,9 @@ ipcMain.handle("save-settings", async (event, settings) => {
         return false;
     }
 });
-// -----------------------------------------------
+// -----------------------------------------------------
 
-const createWindow = () => {
+function createWindow() {
     const win = new BrowserWindow({
         width: 1600,
         height: 1000,
@@ -114,10 +61,8 @@ const createWindow = () => {
         },
     });
 
-    // win.webContents.openDevTools();
-
     win.loadFile(path.join(__dirname, "index.html"));
-};
+}
 
 app.whenReady().then(() => {
     createWindow();
@@ -135,62 +80,86 @@ app.on("window-all-closed", () => {
     }
 });
 
+// Simple log passthrough
 ipcMain.on("log-with-level", (_, { level, message }) => {
     console.log(`[Renderer][${level}] ${message}`);
 });
 
-// Add RSS handler with caching
-ipcMain.handle("fetch-rss", async (_, url) => {
-    const hash = crypto.createHash("md5").update(url).digest("hex");
-    const cachePath = path.join(CACHE_DIR, `${hash}.json`);
+// -----------------------------------------------------
+// NEW: All RSS operations now call the Python backend.
+// -----------------------------------------------------
 
-    let cachedData = null;
-
-    // Try to read cache
+/**
+ * Retrieve the list of RSS sources from the Python server.
+ * Expects the backend to respond with JSON like:
+ *     { "rss_sources": [ { "title": "...", "url": "..." }, ... ] }
+ */
+ipcMain.handle("get-rss-sources", async () => {
     try {
-        if (fs.existsSync(cachePath)) {
-            const rawData = fs.readFileSync(cachePath, "utf-8");
-            cachedData = JSON.parse(rawData);
-
-            // Check if cache is still valid
-            if (Date.now() - cachedData.lastFetched < CACHE_DURATION) {
-                return cachedData.feed;
-            }
-        }
+        const response = await fetch("http://141.147.74.209:5000/get_rss_sources");
+        if (!response.ok) throw new Error("Failed to get RSS sources");
+        const data = await response.json();
+        // Return the array of sources for the renderer
+        return data.rss_sources || [];
     } catch (error) {
-        console.error("Cache read error:", error);
+        console.error("Error fetching sources from backend:", error);
+        return [];
     }
+});
 
-    // Fetch fresh data if cache is invalid
+/**
+ * Save (or replace) the entire list of RSS sources in the Python server’s database.
+ * The renderer calls this with an array of sources:
+ *     [ { title: "My RSS", url: "http://..." }, ... ]
+ * We'll POST that entire array to the server endpoint.
+ */
+ipcMain.handle("save-rss-sources", async (_, sources) => {
     try {
-        const feed = await parser.parseURL(url);
-        const dataToCache = {
-            lastFetched: Date.now(),
-            feed: {
-                title: feed.title,
-                items: feed.items.map((item) => ({
-                    title: item.title,
-                    content: item.content || item.description,
-                    link: item.link,
-                    pubDate: item.pubDate,
-                    // If the feed provides an enclosure with an image
-                    image:
-                        item.enclosure && item.enclosure.url
-                            ? item.enclosure.url
-                            : null,
-                })),
-            },
-        };
-
-        // Update cache
-        fs.writeFileSync(cachePath, JSON.stringify(dataToCache), "utf-8");
-        return dataToCache.feed;
+        const response = await fetch("http://141.147.74.209:5000/save_rss_sources", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ rss_sources: sources }),
+        });
+        if (!response.ok) throw new Error("Failed to save RSS sources");
+        return true;
     } catch (error) {
-        // Fallback to cached data if available
-        if (cachedData) {
-            console.error("Using cached data due to fetch error");
-            return cachedData.feed;
+        console.error("Error saving RSS sources to backend:", error);
+        return false;
+    }
+});
+
+/**
+ * Fetch the articles for a given RSS URL from the Python server.
+ * The server will parse (and store) the feed, generate summaries,
+ * and return JSON like:
+ * {
+ *   "title": "Feed Title",
+ *   "items": [
+ *      {
+ *        "title": "...",
+ *        "content": "...",
+ *        "link": "...",
+ *        "pubDate": "...",
+ *        "summary": "..."
+ *      },
+ *      ...
+ *   ]
+ * }
+ */
+ipcMain.handle("fetch-rss", async (_, url) => {
+    try {
+        const response = await fetch("http://141.147.74.209:5000/fetch_rss", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ url }),
+        });
+        if (!response.ok) {
+            throw new Error(`fetch_rss request failed: ${response.statusText}`);
         }
+        const data = await response.json();
+        return data; // { title, items: [...] }
+    } catch (error) {
+        console.error("Error in fetch-rss from backend:", error);
         throw error;
     }
 });
