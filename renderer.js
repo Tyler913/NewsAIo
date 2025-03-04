@@ -228,6 +228,10 @@ document.addEventListener("DOMContentLoaded", function () {
                     li.dataset.content = item.content;
                     li.dataset.link = item.link;
                     li.dataset.pubDate = item.pubDate;
+
+                    // >>>> ADDED: Store the AI summary <<<<
+                    li.dataset.summary = item.summary || "";
+
                     articlesList.appendChild(li);
                 });
             } catch (error) {
@@ -254,19 +258,29 @@ document.addEventListener("DOMContentLoaded", function () {
             const link = target.dataset.link;
             const pubDate = target.dataset.pubDate;
 
+            // >>>> ADDED: Read the AI summary <<<<
+            const summary = target.dataset.summary || "";
+
             articleDisplay.innerHTML = `
-        ${
-            pubDate
-                ? `<p><small>${new Date(pubDate).toLocaleString()}</small></p>`
-                : ""
-        }
-        <div>${content}</div>
-        ${
-            link
-                ? `<p><a href="${link}" target="_blank">Read full article</a></p>`
-                : ""
-        }
-      `;
+                ${
+                    pubDate
+                        ? `<p><small>${new Date(pubDate).toLocaleString()}</small></p>`
+                        : ""
+                }
+                ${
+                    summary
+                        ? `<div style="font-style: italic; margin-bottom: 1em;">
+                               <strong>AI Summary:</strong><br>${summary}
+                           </div>`
+                        : ""
+                }
+                <div>${content}</div>
+                ${
+                    link
+                        ? `<p><a href="${link}" target="_blank">Read full article</a></p>`
+                        : ""
+                }
+            `;
         }
     });
 
