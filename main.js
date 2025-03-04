@@ -1,35 +1,29 @@
-/****************************************************
- * main.js - Electron main process with local caching
- * for RSS articles + AI summaries received from the
- * Python backend.
- ****************************************************/
 const { ipcMain, app, nativeTheme, BrowserWindow } = require("electron");
 const fs = require("fs");
-const path = require("node:path");
+const path = require("path");
 const crypto = require("crypto");
 
-// Use dynamic import for node-fetch
+// We'll load node-fetch dynamically.
 let fetch;
 (async () => {
     const { default: fetchModule } = await import("node-fetch");
     fetch = fetchModule;
 })();
 
-// ---------- Cache Configuration ----------
 const CACHE_DURATION = 6 * 60 * 60 * 1000; // 6 hours
 const CACHE_DIR = path.join(app.getPath("userData"), "rss_cache");
 if (!fs.existsSync(CACHE_DIR)) {
     fs.mkdirSync(CACHE_DIR, { recursive: true });
 }
 
-// ---------- Persistent Settings ----------
+// ---------- Settings ----------
 const SETTINGS_FILE = path.join(app.getPath("userData"), "settings.json");
 const DEFAULT_SETTINGS = {
     darkMode: nativeTheme.shouldUseDarkColors,
     fontScale: 1.0,
 };
 
-// Create settings file if not present
+// Create the settings file if not present
 if (!fs.existsSync(SETTINGS_FILE)) {
     fs.writeFileSync(
         SETTINGS_FILE,
@@ -61,7 +55,7 @@ ipcMain.handle("save-settings", async (event, settings) => {
         return false;
     }
 });
-// -----------------------------------------
+// ------------------------------
 
 function createWindow() {
     const win = new BrowserWindow({
@@ -94,21 +88,24 @@ app.on("window-all-closed", () => {
     }
 });
 
-// Renderer log passthrough
+// For logs from renderer
 ipcMain.on("log-with-level", (_, { level, message }) => {
     console.log(`[Renderer][${level}] ${message}`);
 });
 
-// ----------------------------
-// Communication with Backend
-// ----------------------------
+// ----- Helper: do all items have AI summary? -----
+function allItemsHaveSummary(feedItems = []) {
+    return feedItems.every(
+        (item) => item.summary && item.summary.trim().length > 0
+    );
+}
 
-/**
- * GET the RSS sources from the Python server DB.
- */
+// ----------------------------------
+//  Call Python backend for sources
+// ----------------------------------
 ipcMain.handle("get-rss-sources", async () => {
     try {
-        const response = await fetch("http://localhost:5000/get_rss_sources");
+        const response = await fetch("http://141.147.74.209:5000/get_rss_sources");
         if (!response.ok) throw new Error("Failed to get RSS sources");
         const data = await response.json();
         return data.rss_sources || [];
@@ -118,12 +115,9 @@ ipcMain.handle("get-rss-sources", async () => {
     }
 });
 
-/**
- * Save the entire list of RSS sources to the Python server DB.
- */
 ipcMain.handle("save-rss-sources", async (_, sources) => {
     try {
-        const response = await fetch("http://localhost:5000/save_rss_sources", {
+        const response = await fetch("http://141.147.74.209:5000/save_rss_sources", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ rss_sources: sources }),
@@ -136,36 +130,45 @@ ipcMain.handle("save-rss-sources", async (_, sources) => {
     }
 });
 
-/**
- * Fetch the feed (articles + AI summaries) from the local cache if fresh;
- * otherwise call the Python backend, then cache the result.
- */
+// ---------------------------------
+//   fetch-rss with partial cache
+// ---------------------------------
 ipcMain.handle("fetch-rss", async (_, url) => {
-    // Create a filename by hashing the URL
     const hash = crypto.createHash("md5").update(url).digest("hex");
     const cachePath = path.join(CACHE_DIR, `${hash}.json`);
 
     let cachedData = null;
 
     // Try reading from local cache
-    try {
-        if (fs.existsSync(cachePath)) {
+    if (fs.existsSync(cachePath)) {
+        try {
             const rawData = fs.readFileSync(cachePath, "utf-8");
             cachedData = JSON.parse(rawData);
 
-            // If cache is still valid, return it
-            if (Date.now() - cachedData.lastFetched < CACHE_DURATION) {
-                console.log("Returning cached feed for:", url);
-                return cachedData.feed;
+            const isNotExpired =
+                Date.now() - cachedData.lastFetched < CACHE_DURATION;
+            const feed = cachedData.feed || {};
+
+            // Check if feed has AI summary for all items
+            const hasAllSummaries =
+                feed.items && allItemsHaveSummary(feed.items);
+
+            if (isNotExpired && hasAllSummaries) {
+                console.log("Returning fully cached feed for:", url);
+                return feed; // Serve from local cache
+            } else {
+                console.log(
+                    "Cache found but is missing summaries or is stale. Will refetch."
+                );
             }
+        } catch (error) {
+            console.error("Error reading cache file:", error);
         }
-    } catch (error) {
-        console.error("Error reading cache file:", error);
     }
 
-    // If no valid cache, fetch from the server
+    // If no cache or missing summary or stale => fetch from server
     try {
-        const response = await fetch("http://localhost:5000/fetch_rss", {
+        const response = await fetch("http://141.147.74.209:5000/fetch_rss", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ url }),
@@ -175,20 +178,22 @@ ipcMain.handle("fetch-rss", async (_, url) => {
         }
         const feed = await response.json(); // { title, items: [...] }
 
-        // Cache the new feed locally
+        // Save new feed to local cache (including summaries)
         const dataToCache = {
             lastFetched: Date.now(),
-            feed, // includes AI summaries
+            feed,
         };
         fs.writeFileSync(cachePath, JSON.stringify(dataToCache), "utf-8");
 
+        console.log("Fetched from server and cached:", url);
         return feed;
     } catch (error) {
-        // If backend fetch fails, but we have old cached data, use it
+        // If backend fetch fails, but we have old cached data, fallback
         if (cachedData) {
-            console.error("Using cached data due to fetch error:", error);
+            console.error("Using old cached data due to fetch error:", error);
             return cachedData.feed;
         }
+        // Otherwise rethrow
         throw error;
     }
 });
