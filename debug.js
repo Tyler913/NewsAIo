@@ -526,7 +526,10 @@ let appSettingsPanel;
 function initUI() {
     console.log("初始化UI...");
     
-    // 初始化AI设置面板和应用设置面板
+    // 设置默认的字体大小
+    document.body.style.fontSize = '1em';
+    
+    // 一次性初始化所有面板，避免多重初始化
     if (typeof initAISettingsPanel === 'function') {
         initAISettingsPanel();
     }
@@ -535,146 +538,24 @@ function initUI() {
         initAppSettingsPanel();
     }
     
+    // 初始化UI控制按钮
+    setupUiControlButtons();
+    
     // 初始化API设置
     if (typeof loadApiSettings === 'function') {
         loadApiSettings();
     }
     
-    // 设置默认的字体大小
-    document.body.style.fontSize = '1em';
-    
     console.log("UI初始化完成");
-    
-    // 确保设置按钮有正确的事件监听
-    console.log("初始化设置面板切换按钮...");
-    
-    // 应用设置按钮
-    const appSettingsToggle = document.getElementById('app-settings-toggle');
-    const appSettingsPanel = document.getElementById('app-settings-panel');
-    if (appSettingsToggle && appSettingsPanel) {
-        console.log("找到应用设置按钮和面板，添加事件监听");
-        
-        // 移除所有现有事件，避免重复绑定
-        const newAppSettingsToggle = appSettingsToggle.cloneNode(true);
-        appSettingsToggle.parentNode.replaceChild(newAppSettingsToggle, appSettingsToggle);
-        
-        // 添加新的事件监听
-        newAppSettingsToggle.addEventListener('click', function(e) {
-            e.stopPropagation();
-            console.log("应用设置按钮被点击");
-            // 先关闭其他面板
-            document.getElementById('ai-settings-panel')?.classList.remove('active');
-            // 切换当前面板
-            appSettingsPanel.classList.toggle('active');
-        });
-    } else {
-        console.error("找不到应用设置按钮或面板", !!appSettingsToggle, !!appSettingsPanel);
-    }
-    
-    // AI设置按钮
-    const aiSettingsToggle = document.getElementById('ai-settings-toggle');
-    const aiSettingsPanel = document.getElementById('ai-settings-panel');
-    if (aiSettingsToggle && aiSettingsPanel) {
-        console.log("找到AI设置按钮和面板，添加事件监听");
-        
-        // 移除所有现有事件，避免重复绑定
-        const newAiSettingsToggle = aiSettingsToggle.cloneNode(true);
-        aiSettingsToggle.parentNode.replaceChild(newAiSettingsToggle, aiSettingsToggle);
-        
-        // 添加新的事件监听
-        newAiSettingsToggle.addEventListener('click', function(e) {
-            e.stopPropagation();
-            console.log("AI设置按钮被点击");
-            // 先关闭其他面板
-            document.getElementById('app-settings-panel')?.classList.remove('active');
-            // 切换当前面板
-            aiSettingsPanel.classList.toggle('active');
-        });
-    } else {
-        console.error("找不到AI设置按钮或面板", !!aiSettingsToggle, !!aiSettingsPanel);
-    }
-    
-    // 关闭按钮
-    const closeAppSettings = document.getElementById('close-app-settings');
-    if (closeAppSettings && appSettingsPanel) {
-        closeAppSettings.addEventListener('click', () => {
-            console.log("关闭应用设置面板");
-            appSettingsPanel.classList.remove('active');
-        });
-    }
-    
-    const closeAiSettings = document.getElementById('close-settings');
-    if (closeAiSettings && aiSettingsPanel) {
-        closeAiSettings.addEventListener('click', () => {
-            console.log("关闭AI设置面板");
-            aiSettingsPanel.classList.remove('active');
-        });
-    }
 }
 
 // 绑定事件监听器
 function bindEventListeners() {
     console.log("绑定事件监听器...");
     
-    // Settings panel buttons
-    const settingsPanels = {
-        'app-settings': {
-            button: document.getElementById('app-settings-toggle'),
-            panel: document.getElementById('app-settings-panel')
-        },
-        'ai-settings': {
-            button: document.getElementById('ai-settings-toggle'),
-            panel: document.getElementById('ai-settings-panel')
-        },
-        'translation-settings': {
-            button: document.getElementById('translation-settings-toggle'),
-            panel: document.getElementById('translation-settings-panel')
-        }
-    };
-
-    // Initialize each settings panel
-    Object.values(settingsPanels).forEach(({ button, panel }) => {
-        if (button && panel) {
-            button.addEventListener('click', (e) => {
-                e.stopPropagation();
-                
-                // Close all other panels first
-                Object.values(settingsPanels).forEach(({ panel: p }) => {
-                    if (p && p !== panel) {
-                        p.classList.remove('active');
-                    }
-                });
-                
-                // Toggle current panel
-                panel.classList.toggle('active');
-            });
-            
-            // Add close button listener
-            const closeBtn = panel.querySelector('.close-settings');
-            if (closeBtn) {
-                closeBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    panel.classList.remove('active');
-                });
-            }
-        }
-    });
-
-    // Close panels when clicking outside
-    document.addEventListener('click', (e) => {
-        const isClickInsidePanel = Object.values(settingsPanels).some(
-            ({ panel }) => panel && panel.contains(e.target)
-        );
-        
-        if (!isClickInsidePanel) {
-            Object.values(settingsPanels).forEach(({ panel }) => {
-                if (panel) {
-                    panel.classList.remove('active');
-                }
-            });
-        }
-    });
-
+    // 注意：设置面板按钮在各自的初始化函数中处理，这里不再重复绑定
+    // 以避免事件监听器冲突
+    
     // Add RSS source button
     const addRssButton = document.getElementById('add-rss-button');
     if (addRssButton) {
@@ -721,8 +602,7 @@ function bindEventListeners() {
         });
     }
     
-    // 设置UI控制按钮
-    setupUiControlButtons();
+    // 不再重复调用setupUiControlButtons，已在initUI中处理
     
     console.log("事件监听器绑定完成");
 }
@@ -731,102 +611,16 @@ function bindEventListeners() {
 function setupUiControlButtons() {
     console.log("设置UI控制按钮...");
     
-    // 1. 应用设置按钮
-    const appSettingsToggle = document.getElementById('app-settings-toggle');
-    if (appSettingsToggle) {
-        appSettingsToggle.addEventListener('click', function() {
-            const panel = document.getElementById('app-settings-panel');
-            if (panel) {
-                console.log("切换应用设置面板");
-                panel.classList.toggle('active');
-                
-                // 如果打开了，初始化当前值
-                if (panel.classList.contains('active')) {
-                    const appLanguageSelect = document.getElementById('app-language');
-                    const fontScaleSetting = document.getElementById('font-scale-setting');
-                    const fontScaleValue = document.getElementById('font-scale-value');
-                    const darkModeSetting = document.getElementById('dark-mode-setting');
-                    
-                    if (appLanguageSelect) {
-                        appLanguageSelect.value = userSettings.language || 'zh-CN';
-                    }
-                    
-                    if (fontScaleSetting && fontScaleValue) {
-                        fontScaleSetting.value = userSettings.fontScale || 1;
-                        fontScaleValue.textContent = userSettings.fontScale || 1;
-                    }
-                    
-                    if (darkModeSetting) {
-                        darkModeSetting.checked = userSettings.darkMode || false;
-                    }
-                }
-            } else {
-                console.error("应用设置面板未找到");
-            }
-        });
-        console.log("应用设置按钮已设置");
-    } else {
-        console.error("未找到应用设置按钮");
+    // 如果按钮已经初始化，则不再添加监听器
+    if (window.uiButtonsInitialized) {
+        console.log("UI按钮已初始化，不再添加事件监听器");
+        return;
     }
     
-    // 2. AI设置按钮
-    const aiSettingsToggle = document.getElementById('ai-settings-toggle');
-    if (aiSettingsToggle) {
-        aiSettingsToggle.addEventListener('click', function() {
-            const panel = document.getElementById('ai-settings-panel');
-            if (panel) {
-                console.log("切换AI设置面板");
-                panel.classList.toggle('active');
-                
-                // 如果打开了，初始化当前值
-                if (panel.classList.contains('active')) {
-                    // 获取表单元素
-                    const autoSummarizeToggle = document.getElementById('auto-summarize');
-                    const streamModeToggle = document.getElementById('stream-mode');
-                    const summaryLanguageSelect = document.getElementById('summary-language');
-                    const summaryLengthSelect = document.getElementById('summary-length');
-                    
-                    // 填充表单
-                    if (autoSummarizeToggle) {
-                        autoSummarizeToggle.checked = userSettings.autoSummarize || false;
-                    }
-                    
-                    if (streamModeToggle) {
-                        streamModeToggle.checked = userSettings.useStreamMode || true;
-                    }
-                    
-                    if (summaryLanguageSelect) {
-                        summaryLanguageSelect.value = userSettings.summaryLanguage || 'auto';
-                    }
-                    
-                    if (summaryLengthSelect) {
-                        summaryLengthSelect.value = userSettings.summaryLength || 'medium';
-                    }
-                    
-                    // 设置API选择
-                    const activeProvider = apiSettings.activeProvider;
-                    if (activeProvider) {
-                        const activeRadio = document.querySelector(`input[name="active-api"][value="${activeProvider}"]`);
-                        if (activeRadio) activeRadio.checked = true;
-                    }
-                    
-                    // 设置API密钥
-                    Object.keys(apiSettings.providers).forEach(provider => {
-                        const input = document.getElementById(`${provider}-api-key`);
-                        if (input) input.value = apiSettings.providers[provider].apiKey || '';
-                        
-                        const select = document.getElementById(`${provider}-model`);
-                        if (select) select.value = apiSettings.providers[provider].model || '';
-                    });
-                }
-            } else {
-                console.error("AI设置面板未找到");
-            }
-        });
-        console.log("AI设置按钮已设置");
-    } else {
-        console.error("未找到AI设置按钮");
-    }
+    window.uiButtonsInitialized = true;
+    
+    // 注意：设置面板按钮在各自的初始化函数中处理，这里不再重复绑定
+    // 以避免事件监听器冲突
     
     // 3. 生成摘要按钮
     const generateSummaryButton = document.getElementById('generate-summary-button');
@@ -907,6 +701,13 @@ document.addEventListener("DOMContentLoaded", function() {
 function initializeApp() {
     try {
         console.log("===== 应用初始化开始 =====");
+        
+        // 创建初始化标志以避免重复初始化
+        if (window.isAppInitialized) {
+            console.log("应用已经初始化，不重复执行初始化流程");
+            return;
+        }
+        window.isAppInitialized = true;
         
         // 第1步: 检查DOM元素
         window.rssSourcesList = document.getElementById("rss-sources");
@@ -2338,17 +2139,29 @@ function initAISettingsPanel() {
     };
     
     // 确保关键元素存在
-    if (!aiSettingsPanel || !aiSettingsToggle) {
-        console.error("无法找到AI设置面板或切换按钮");
+    if (!aiSettingsPanel || !aiSettingsToggle || !autoSummarizeToggle || !streamModeToggle || !summaryLanguageSelect || !summaryLengthSelect || !saveApiSettingsBtn || !apiRadios || !apiKeyInputs || !modelSelects) {
+        console.error("无法找到AI设置面板或切换按钮，或表单元素，或API相关元素");
         return;
     }
     
     console.log("AI设置面板元素已获取");
     
+    // 移除所有现有事件，避免重复绑定
+    const newAiSettingsToggle = aiSettingsToggle.cloneNode(true);
+    aiSettingsToggle.parentNode.replaceChild(newAiSettingsToggle, aiSettingsToggle);
+    
+    // 更新全局引用
+    window.aiSettingsToggleRef = newAiSettingsToggle;
+    
     // 切换设置面板显示/隐藏
-    aiSettingsToggle.addEventListener("click", function(e) {
+    newAiSettingsToggle.addEventListener("click", function(e) {
         e.stopPropagation(); // 阻止事件冒泡
         console.log("切换AI设置面板");
+        
+        // 关闭其他面板
+        document.getElementById('app-settings-panel')?.classList.remove('active');
+        
+        // 切换当前面板
         aiSettingsPanel.classList.toggle("active");
         
         // 初始化表单值
@@ -2504,11 +2317,23 @@ function initAppSettingsPanel() {
     
     console.log("应用设置面板元素已获取");
     
+    // 移除所有现有事件，避免重复绑定
+    const newAppSettingsToggle = appSettingsToggle.cloneNode(true);
+    appSettingsToggle.parentNode.replaceChild(newAppSettingsToggle, appSettingsToggle);
+    
+    // 更新全局引用
+    window.appSettingsToggleRef = newAppSettingsToggle;
+    
     // 打开应用设置面板
-    appSettingsToggle.addEventListener('click', function(e) {
+    newAppSettingsToggle.addEventListener('click', function(e) {
         e.stopPropagation(); // 阻止事件冒泡
         console.log("打开应用设置面板");
-        appSettingsPanel.classList.add('active');
+        
+        // 关闭其他面板
+        document.getElementById('ai-settings-panel')?.classList.remove('active');
+        
+        // 切换当前面板
+        appSettingsPanel.classList.toggle('active');
         
         // 设置当前值
         if (appLanguageSelect) {
