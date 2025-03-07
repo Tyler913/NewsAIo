@@ -1,6 +1,6 @@
 {
   "name": "news-aio",
-  "version": "0.1.0",
+  "version": "0.2.1",
   "description": "An application which fetch articles automatically & summarize using latest LLM",
   "main": "main.js",
   "scripts": {

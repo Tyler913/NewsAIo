@@ -10,7 +10,7 @@ module.exports = {
     },
     rebuildConfig: {},
     makers: [
-        // Windows版本 - Squirrel.Windows安装包 (exe)
+        // Windows版本 - 仅在Windows环境构建时使用此配置
         {
             name: '@electron-forge/maker-squirrel',
             config: {
@@ -19,6 +19,7 @@ module.exports = {
                 // iconUrl: 'https://raw.githubusercontent.com/Tyler913/NewsAIo/main/assets/icon.ico',
                 // setupIcon: './assets/icon.ico',
             },
+            platforms: process.platform === 'win32' ? ['win32'] : [],
         },
         // macOS版本 - DMG格式
         {
@@ -28,6 +29,7 @@ module.exports = {
                 // background: './assets/dmg-background.png',  // 如果有DMG背景图
                 format: 'ULFO',
             },
+            platforms: ['darwin'],
         },
         // Linux版本 - Debian包
         {
@@ -39,6 +41,7 @@ module.exports = {
                     // icon: './assets/icon.png',
                 },
             },
+            platforms: ['linux'],
         },
         // Linux版本 - RPM包
         {
@@ -50,6 +53,7 @@ module.exports = {
                     // icon: './assets/icon.png',
                 },
             },
+            platforms: ['linux'],
         },
         // 通用ZIP格式 - 所有平台通用
         {
