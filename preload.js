@@ -11,6 +11,9 @@ contextBridge.exposeInMainWorld("electronAPI", {
     // 系统语言检测
     getSystemLanguage: () => ipcRenderer.invoke("get-system-language"),
     
+    // 打开外部链接
+    openExternal: (url) => ipcRenderer.invoke("open-external", url),
+    
     // 设置相关
     getSettings: () => ipcRenderer.invoke("get-settings"),
     saveSettings: (settings) => ipcRenderer.invoke("save-settings", settings),

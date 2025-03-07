@@ -86,7 +86,8 @@ const i18n = {
         'settings_title': '设置',
         'missing_api_config': '未选择API提供商或API设置不完整',
         'missing_api_key': '缺少API密钥',
-        'open_ai_settings_prompt': '未配置API设置，是否要打开设置面板？'
+        'open_ai_settings_prompt': '未配置API设置，是否要打开设置面板？',
+        'back_to_article': '返回文章'
     },
     'en-US': {
         // Main UI
@@ -169,7 +170,8 @@ const i18n = {
         'settings_title': 'Settings',
         'missing_api_config': 'API provider not configured',
         'missing_api_key': 'API key missing',
-        'open_ai_settings_prompt': 'API not configured, do you want to open settings panel?'
+        'open_ai_settings_prompt': 'API not configured, do you want to open settings panel?',
+        'back_to_article': 'Back to Article'
     }
 };
 
@@ -1928,6 +1930,14 @@ function displayArticleContent(article) {
         // 准备文章内容HTML
         let contentHtml = '';
         
+        // 添加返回按钮
+        contentHtml += `
+        <div class="back-button-container">
+            <button id="back-to-article-button" class="back-button">
+                <i class="fas fa-arrow-left"></i> ${t('back_to_article')}
+            </button>
+        </div>`;
+        
         // 1. 文章标题和日期
         let pubDate = '';
         if (article.pubDate) {
@@ -1995,6 +2005,79 @@ function displayArticleContent(article) {
         const contentElements = articleContainer.querySelectorAll('.article-content, .ai-summary, .translation-content');
         contentElements.forEach(element => {
             element.style.fontSize = 'inherit';
+        });
+        
+        // 处理返回按钮点击事件
+        const backButton = document.getElementById('back-to-article-button');
+        if (backButton) {
+            backButton.addEventListener('click', () => {
+                // 重新显示当前文章，本质上是返回到初始状态
+                if (window.currentArticleData) {
+                    displayArticleContent(window.currentArticleData);
+                }
+            });
+        }
+        
+        // 处理文章中所有链接，使其在外部浏览器中打开
+        const articleLinks = articleContainer.querySelectorAll('.article-content a');
+        articleLinks.forEach(link => {
+            // 移除现有的事件处理器
+            const newLink = link.cloneNode(true);
+            link.parentNode.replaceChild(newLink, link);
+            
+            // 添加新的点击事件处理器
+            newLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                const href = newLink.getAttribute('href');
+                if (href && href !== '#' && !href.startsWith('javascript:')) {
+                    window.electronAPI.openExternal(href);
+                }
+                return false;
+            });
+        });
+        
+        // 处理图片点击，添加点击后返回的功能
+        const articleImages = articleContainer.querySelectorAll('.article-content img');
+        articleImages.forEach(img => {
+            img.style.cursor = 'pointer';
+            img.addEventListener('click', () => {
+                // 如果图片有链接，则在外部浏览器中打开
+                const parentAnchor = img.closest('a');
+                if (parentAnchor) {
+                    const href = parentAnchor.getAttribute('href');
+                    if (href && href !== '#' && !href.startsWith('javascript:')) {
+                        window.electronAPI.openExternal(href);
+                    }
+                } else {
+                    // 如果图片没有链接，则放大显示图片
+                    const imgSrc = img.getAttribute('src');
+                    if (imgSrc) {
+                        // 创建一个覆盖层显示图片
+                        const overlay = document.createElement('div');
+                        overlay.className = 'image-overlay';
+                        overlay.innerHTML = `
+                            <div class="image-overlay-content">
+                                <button class="close-overlay-button"><i class="fas fa-times"></i></button>
+                                <img src="${imgSrc}" alt="enlarged image" />
+                            </div>
+                        `;
+                        document.body.appendChild(overlay);
+                        
+                        // 添加关闭功能
+                        const closeButton = overlay.querySelector('.close-overlay-button');
+                        closeButton.addEventListener('click', () => {
+                            document.body.removeChild(overlay);
+                        });
+                        
+                        // 点击覆盖层背景也可以关闭
+                        overlay.addEventListener('click', (e) => {
+                            if (e.target === overlay) {
+                                document.body.removeChild(overlay);
+                            }
+                        });
+                    }
+                }
+            });
         });
         
         // 确保再次滚动到顶部

@@ -504,6 +504,19 @@ app.whenReady().then(() => {
         return getSystemLanguage();
     });
     
+    // 打开外部链接
+    ipcMain.handle("open-external", async (_, url) => {
+        try {
+            // 使用Electron shell模块打开外部浏览器
+            const { shell } = require('electron');
+            await shell.openExternal(url);
+            return true;
+        } catch (error) {
+            console.error("打开外部链接失败:", error);
+            return false;
+        }
+    });
+    
     // 其他已有的IPC处理程序...
     // ... existing code ...
 });
