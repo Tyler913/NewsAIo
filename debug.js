@@ -83,7 +83,10 @@ const i18n = {
         'loading_content': '加载内容...',
         'generating_summary': '正在生成摘要...',
         'translating': '正在翻译...',
-        'settings_title': '设置'
+        'settings_title': '设置',
+        'missing_api_config': '未选择API提供商或API设置不完整',
+        'missing_api_key': '缺少API密钥',
+        'open_ai_settings_prompt': '未配置API设置，是否要打开设置面板？'
     },
     'en-US': {
         // Main UI
@@ -163,7 +166,10 @@ const i18n = {
         'loading_content': 'Loading content...',
         'generating_summary': 'Generating summary...',
         'translating': 'Translating...',
-        'settings_title': 'Settings'
+        'settings_title': 'Settings',
+        'missing_api_config': 'API provider not configured',
+        'missing_api_key': 'API key missing',
+        'open_ai_settings_prompt': 'API not configured, do you want to open settings panel?'
     }
 };
 
@@ -907,12 +913,18 @@ async function generateSummary(article) {
     const provider = apiSettings.activeProvider;
     if (!provider || !apiSettings.providers[provider]) {
         console.error("未选择API提供商或API设置不完整");
-        showNotification("请先在AI设置中配置API", "error");
         
-        // 打开AI设置面板
-        const aiSettingsPanel = document.getElementById('ai-settings-panel');
-        if (aiSettingsPanel) {
-            aiSettingsPanel.classList.add("active");
+        // 显示带按钮的通知，让用户选择是否打开设置
+        const notificationMessage = t('missing_api_config');
+        showNotification(notificationMessage, "warning");
+        
+        // 询问用户是否要打开设置面板，而不是自动打开
+        if (confirm(t('open_ai_settings_prompt'))) {
+            // 用户确认后打开AI设置面板
+            const aiSettingsPanel = document.getElementById('ai-settings-panel');
+            if (aiSettingsPanel) {
+                aiSettingsPanel.classList.add("active");
+            }
         }
         return;
     }
@@ -920,12 +932,18 @@ async function generateSummary(article) {
     const apiKey = apiSettings.providers[provider].apiKey;
     if (!apiKey) {
         console.error("缺少API密钥");
-        showNotification("请先在AI设置中配置API密钥", "error");
         
-        // 打开AI设置面板
-        const aiSettingsPanel = document.getElementById('ai-settings-panel');
-        if (aiSettingsPanel) {
-            aiSettingsPanel.classList.add("active");
+        // 显示带按钮的通知，让用户选择是否打开设置
+        const notificationMessage = t('missing_api_key');
+        showNotification(notificationMessage, "warning");
+        
+        // 询问用户是否要打开设置面板，而不是自动打开
+        if (confirm(t('open_ai_settings_prompt'))) {
+            // 用户确认后打开AI设置面板
+            const aiSettingsPanel = document.getElementById('ai-settings-panel');
+            if (aiSettingsPanel) {
+                aiSettingsPanel.classList.add("active");
+            }
         }
         return;
     }
