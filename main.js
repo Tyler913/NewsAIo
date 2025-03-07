@@ -454,6 +454,18 @@ function allItemsHaveSummary(feedItems = []) {
     );
 }
 
+// 获取系统语言并映射到我们支持的语言
+function getSystemLanguage() {
+    const locale = app.getLocale();
+    
+    // 只支持中文和英文，其他语言默认为英文
+    if (locale.startsWith('zh')) {
+        return 'zh-CN';
+    } else {
+        return 'en-US';
+    }
+}
+
 // 创建窗口
 function createWindow() {
     const win = new BrowserWindow({
@@ -484,6 +496,16 @@ app.whenReady().then(() => {
             createWindow();
         }
     });
+
+    // 注册IPC处理程序
+    
+    // 获取系统语言
+    ipcMain.handle("get-system-language", () => {
+        return getSystemLanguage();
+    });
+    
+    // 其他已有的IPC处理程序...
+    // ... existing code ...
 });
 
 app.on("window-all-closed", () => {

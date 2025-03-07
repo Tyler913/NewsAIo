@@ -8,6 +8,9 @@ contextBridge.exposeInMainWorld("electronAPI", {
     fetchRss: (url) => ipcRenderer.invoke("fetch-rss", url),
     addRssSource: (url) => ipcRenderer.invoke("add-rss-source", url),
     
+    // 系统语言检测
+    getSystemLanguage: () => ipcRenderer.invoke("get-system-language"),
+    
     // 设置相关
     getSettings: () => ipcRenderer.invoke("get-settings"),
     saveSettings: (settings) => ipcRenderer.invoke("save-settings", settings),

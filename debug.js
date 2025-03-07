@@ -1377,7 +1377,7 @@ async function updateArticleSummary(feedUrl, article) {
 // 加载用户设置
 async function loadSettings() {
     try {
-        const settings = await window.electronAPI.loadSettings();
+        const settings = await window.electronAPI.getSettings();
         userSettings = { ...userSettings, ...settings };
         
         // 如果没有显式保存过深色模式设置，则检测并应用系统主题
@@ -1388,10 +1388,24 @@ async function loadSettings() {
             document.documentElement.classList.toggle('dark', userSettings.darkMode);
         }
         
-        // 设置当前语言
+        // 设置语言
         if (userSettings.language) {
+            // 如果用户已经设置过语言偏好，使用保存的设置
             currentLanguage = userSettings.language;
-            console.log("从设置加载语言:", currentLanguage);
+            console.log("使用用户保存的语言设置:", currentLanguage);
+        } else {
+            // 如果用户未设置语言偏好，则获取系统语言
+            try {
+                const systemLanguage = await window.electronAPI.getSystemLanguage();
+                currentLanguage = systemLanguage;
+                userSettings.language = systemLanguage; // 保存到用户设置中
+                console.log("检测到系统语言，设置为:", currentLanguage);
+                // 保存设置
+                await window.electronAPI.saveSettings(userSettings);
+            } catch (error) {
+                console.error("获取系统语言失败，使用默认语言:", error);
+                // 保持默认语言
+            }
         }
         
         // 应用设置到UI
@@ -1410,6 +1424,18 @@ async function loadSettings() {
         // 即使加载设置失败，仍然尝试应用系统主题并设置监听器
         detectAndApplySystemTheme();
         setupThemeListener();
+        
+        // 尝试获取系统语言
+        try {
+            const systemLanguage = await window.electronAPI.getSystemLanguage();
+            currentLanguage = systemLanguage;
+            console.log("设置失败，但检测到系统语言，设置为:", currentLanguage);
+            updateUILanguage();
+        } catch (langError) {
+            console.error("获取系统语言失败:", langError);
+            // 保持默认语言，并更新UI
+            updateUILanguage();
+        }
         
         return userSettings;
     }
