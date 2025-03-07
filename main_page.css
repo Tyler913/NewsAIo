@@ -40,13 +40,13 @@
     --scrollbar-thumb: #555;
     --scrollbar-track: #333;
     --article-bg: rgba(35, 35, 35, 0.95);
-    --article-text: #d0d0d0;
-    --article-title: #e0e0e0;
-    --article-meta: #888;
+    --article-text: #f0f0f0;
+    --article-title: #ffffff;
+    --article-meta: #bdbdbd;
     --card-hover: #2c2c2c;
     --notification-bg: rgba(30, 30, 30, 0.95);
     --ai-summary-bg: rgba(74, 111, 165, 0.2);
-    --ai-summary-text: #e0e0e0;
+    --ai-summary-text: #f0f0f0;
     --column-header-bg: #1e1e1e;
 }
 
@@ -1132,4 +1132,43 @@ body.dark-mode .translation-content {
 
 :root.dark a:hover {
     color: var(--primary-color);
+}
+
+/* 增强深色模式下文章内容的可读性 */
+:root.dark .article-content {
+    color: var(--article-text);
+    line-height: 1.7;
+}
+
+:root.dark .article-content h1,
+:root.dark .article-content h2,
+:root.dark .article-content h3,
+:root.dark .article-content h4,
+:root.dark .article-content h5,
+:root.dark .article-content h6 {
+    color: var(--article-title);
+    margin-bottom: 0.7em;
+}
+
+:root.dark .article-content p {
+    margin-bottom: 1em;
+}
+
+:root.dark .article-content a {
+    color: var(--primary-color-light);
+    text-decoration: none;
+    border-bottom: 1px dotted var(--primary-color-light);
+}
+
+:root.dark .article-content a:hover {
+    color: var(--primary-color);
+    border-bottom-color: var(--primary-color);
+}
+
+:root.dark .article-content blockquote {
+    border-left: 3px solid var(--primary-color);
+    background: rgba(255, 255, 255, 0.05);
+    padding: 0.8em 1em;
+    margin: 1em 0;
+    color: var(--article-text);
 }
