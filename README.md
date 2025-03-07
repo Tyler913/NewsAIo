@@ -1,4 +1,4 @@
-## NewsAIo - AI驱动的RSS阅读器 | AI-Powered RSS Reader
+## News AIo
 
 <div align="center">
   <img src="https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-blue" alt="Platform - Windows, macOS, Linux">
@@ -10,10 +10,10 @@
 </div>
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/Tyler913/NewsAIo/main/assets/logo.png" alt="NewsAIo Logo" width="180">
+  <img src="https://raw.githubusercontent.com/Tyler913/NewsAIo/main/assets/logo.png" alt="News AIo Logo" width="180">
 </p>
 
-NewsAIo 是一款基于 Electron 和 Node.js 构建的本地化 RSS 阅读器，集成了最新 AI 技术，实现文章自动摘要和即时翻译等强大功能。该项目支持多种 AI 模型（如 OpenAI GPT-3.5/4、Anthropic Claude 和 DeepSeek），同时具备流式输出、自动摘要、快速翻译、暗色模式、毛玻璃效果以及本地缓存等特性，为用户提供现代化、流畅且高度可定制的阅读体验。
+News AIo 是一款基于 Electron 和 Node.js 构建的本地化 RSS 阅读器，集成了最新 AI 技术，实现文章自动摘要和即时翻译等强大功能。该项目支持多种 AI 模型（如 OpenAI GPT-3.5/4、Anthropic Claude 和 DeepSeek），同时具备流式输出、自动摘要、快速翻译、暗色模式、毛玻璃效果以及本地缓存等特性，为用户提供现代化、流畅且高度可定制的阅读体验。
 
 [English](#english) | [中文](#中文)
 

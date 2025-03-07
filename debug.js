@@ -7,7 +7,7 @@ let currentLanguage = 'zh-CN'; // 默认为中文
 const i18n = {
     'zh-CN': {
         // 应用程序主要UI
-        'app_title': 'NewsAIo - 智能RSS阅读器',
+        'app_title': 'News AIo',
         'feed_list': '订阅源',
         'article_list': '文章列表',
         'article_content': '文章内容',
@@ -87,7 +87,7 @@ const i18n = {
     },
     'en-US': {
         // Main UI
-        'app_title': 'NewsAIo - Intelligent RSS Reader',
+        'app_title': 'News AIo',
         'feed_list': 'Subscriptions',
         'article_list': 'Articles',
         'article_content': 'Article Content',

@@ -1,5 +1,5 @@
 {
-  "name": "NewsAIo",
+  "name": "News AIo",
   "version": "0.1.0",
   "description": "An application which fetch articles automatically & summarize using latest LLM",
   "main": "main.js",
