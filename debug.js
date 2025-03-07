@@ -64,7 +64,17 @@ const i18n = {
         'save_settings_error': '保存设置失败',
         'app_language': '应用语言',
         'interface_options': '界面选项',
-        'close': '关闭'
+        'close': '关闭',
+        'enter_rss_url': '输入 RSS 订阅链接',
+        'select_rss_first': '请先选择左侧的RSS源',
+        'summary_options': '摘要选项',
+        'api_configuration': 'API 配置',
+        'summary_language': '摘要语言',
+        'auto_language': '自动 (与文章相同)',
+        'chinese': '简体中文',
+        'english': '英语',
+        'model': '模型',
+        'anthropic_claude': 'Anthropic Claude',
     },
     'en-US': {
         // Main UI
@@ -125,7 +135,17 @@ const i18n = {
         'save_settings_error': 'Failed to save settings',
         'app_language': 'App Language',
         'interface_options': 'Interface Options',
-        'close': 'Close'
+        'close': 'Close',
+        'enter_rss_url': 'Enter RSS subscription URL',
+        'select_rss_first': 'Please select an RSS source first',
+        'summary_options': 'Summary Options',
+        'api_configuration': 'API Configuration',
+        'summary_language': 'Summary Language',
+        'auto_language': 'Auto (Same as article)',
+        'chinese': 'Chinese',
+        'english': 'English',
+        'model': 'Model',
+        'anthropic_claude': 'Anthropic Claude',
     }
 };
 
@@ -150,98 +170,238 @@ async function switchLanguage(language) {
     
     // 更新当前用户设置
     userSettings.language = language;
-    await saveSettings();
-    
-    // 更新UI文本
-    updateUILanguage();
-    
-    // 显示语言切换通知
-    showNotification(t('settings_saved'));
+    try {
+        await window.electronAPI.saveSettings(userSettings);
+        // 更新UI文本
+        updateUILanguage();
+        // 显示语言切换通知
+        showNotification(t('language_change_restart'));
+    } catch (error) {
+        console.error("保存语言设置失败:", error);
+        showNotification(t('save_settings_error'), "error");
+    }
 }
 
 // 更新UI文本的函数
 function updateUILanguage() {
+    console.log("更新UI语言为:", currentLanguage);
     // 更新顶部标题
     document.title = t('app_title');
     
-    // 更新侧边栏标题
-    document.getElementById('sidebar-header').innerHTML = `<i class="fas fa-rss"></i> ${t('feed_list')}`;
+    try {
+        // 更新RSS源列表标题
+        const rssTitleElement = document.querySelector('.sources-column .column-header h2');
+        if (rssTitleElement) {
+            rssTitleElement.innerHTML = `<i class="fas fa-rss"></i> ${t('feed_list')}`;
+        }
+        
+        // 更新文章列表标题
+        const articlesTitleElement = document.querySelector('.articles-column .column-header h2');
+        if (articlesTitleElement) {
+            articlesTitleElement.innerHTML = `<i class="fas fa-newspaper"></i> ${t('article_list')}`;
+        }
+        
+        // 更新文章内容标题
+        const contentTitleElement = document.querySelector('.content-column .column-header h2');
+        if (contentTitleElement) {
+            contentTitleElement.innerHTML = `<i class="fas fa-book-open"></i> ${t('article_content')}`;
+        }
+        
+        // 更新按钮标题属性
+        const addRssButton = document.getElementById('add-rss-button');
+        if (addRssButton) {
+            addRssButton.title = t('add_source');
+        }
+        
+        const generateSummaryButton = document.getElementById('generate-summary-button');
+        if (generateSummaryButton) {
+            generateSummaryButton.title = t('generate_summary');
+        }
+        
+        // 更新添加订阅框
+        const modalTitle = document.querySelector('#add-feed-modal .modal-content h2');
+        if (modalTitle) {
+            modalTitle.innerHTML = `<i class="fas fa-rss"></i> ${t('add_source')}`;
+        }
+        
+        const rssUrlInput = document.getElementById('rss-url-input');
+        if (rssUrlInput) {
+            rssUrlInput.placeholder = t('enter_rss_url');
+        }
+        
+        const submitRssButton = document.getElementById('submit-rss-button');
+        if (submitRssButton) {
+            submitRssButton.innerHTML = `<i class="fas fa-plus"></i> ${t('add_source')}`;
+        }
+        
+        // 更新空状态消息
+        const emptyStates = document.querySelectorAll('.empty-state');
+        emptyStates.forEach(el => {
+            if (el.parentElement.id === 'articles-container') {
+                el.textContent = t('select_rss_first');
+            } else if (el.parentElement.id === 'article-container') {
+                el.textContent = t('no_article_selected');
+            }
+        });
+        
+        // 更新设置面板
+        updateSettingsPanels();
+        
+        // 更新翻译下拉菜单
+        const languageDropdown = document.querySelector('.dropdown-content');
+        if (languageDropdown) {
+            const links = languageDropdown.querySelectorAll('a');
+            if (links.length >= 2) {
+                links[0].textContent = t('translate_to_chinese');
+                links[1].textContent = t('translate_to_english');
+            }
+        }
+    } catch (error) {
+        console.error("UI语言更新错误:", error);
+    }
+}
+
+// 更新设置面板的翻译
+function updateSettingsPanels() {
+    // AI设置面板
+    const aiSettingsHeader = document.querySelector('#ai-settings-panel .settings-header h3');
+    if (aiSettingsHeader) {
+        aiSettingsHeader.innerHTML = `<i class="fas fa-robot"></i> ${t('ai_settings')}`;
+    }
     
-    // 更新文章列表标题
-    document.getElementById('articles-header').innerHTML = `<i class="fas fa-newspaper"></i> ${t('article_list')}`;
+    const closeAiSettings = document.getElementById('close-settings');
+    if (closeAiSettings) {
+        closeAiSettings.title = t('close');
+    }
     
-    // 更新文章内容标题
-    document.getElementById('content-header').innerHTML = `<i class="fas fa-book-open"></i> ${t('article_content')}`;
+    // 更新AI设置标题
+    const aiSettingSections = document.querySelectorAll('#ai-settings-panel .settings-section h4');
+    if (aiSettingSections.length >= 2) {
+        aiSettingSections[0].textContent = t('summary_options');
+        aiSettingSections[1].textContent = t('api_configuration');
+    }
     
-    // 更新按钮和标签文本
-    document.getElementById('generate-summary-btn').innerText = t('generate_summary');
-    document.getElementById('translate-article-btn').innerText = t('translate_button');
-    document.getElementById('auto-summarize-label').innerText = t('auto_summarize');
-    document.getElementById('auto-summarize-description').innerText = t('auto_summarize_desc');
-    document.getElementById('stream-mode-label').innerText = t('use_stream_mode');
-    document.getElementById('stream-mode-description').innerText = t('use_stream_mode_desc');
+    // 更新AI设置选项
+    const autoSummarizeLabel = document.querySelector('#auto-summarize + .toggle-slider').parentNode.querySelector('.label-text');
+    if (autoSummarizeLabel) {
+        autoSummarizeLabel.textContent = t('auto_summarize');
+    }
     
-    // 更新设置面板
-    document.getElementById('ai-settings-tab').innerText = t('ai_settings');
-    document.getElementById('app-settings-tab').innerText = t('app_settings');
-    document.getElementById('api-provider-label').innerText = t('api_provider');
-    document.getElementById('api-key-label').innerText = t('api_key');
-    document.getElementById('summary-length-label').innerText = t('summary_length');
-    document.getElementById('language-label').innerText = t('language');
-    document.getElementById('font-size-label').innerText = t('font_size');
-    document.getElementById('dark-mode-label').innerText = t('dark_mode');
+    const autoSummarizeDesc = document.querySelector('#auto-summarize').parentNode.nextElementSibling;
+    if (autoSummarizeDesc && autoSummarizeDesc.classList.contains('setting-description')) {
+        autoSummarizeDesc.textContent = t('auto_summarize_desc');
+    }
+    
+    const streamModeLabel = document.querySelector('#stream-mode + .toggle-slider').parentNode.querySelector('.label-text');
+    if (streamModeLabel) {
+        streamModeLabel.textContent = t('use_stream_mode');
+    }
+    
+    const streamModeDesc = document.querySelector('#stream-mode').parentNode.nextElementSibling;
+    if (streamModeDesc && streamModeDesc.classList.contains('setting-description')) {
+        streamModeDesc.textContent = t('use_stream_mode_desc');
+    }
+    
+    // 更新下拉菜单标签
+    const summaryLanguageLabel = document.querySelector('label[for="summary-language"]');
+    if (summaryLanguageLabel) {
+        summaryLanguageLabel.textContent = t('summary_language');
+    }
+    
+    const summaryLengthLabel = document.querySelector('label[for="summary-length"]');
+    if (summaryLengthLabel) {
+        summaryLengthLabel.textContent = t('summary_length');
+    }
     
     // 更新下拉菜单选项
-    const summaryLengthSelect = document.getElementById('summary-length-select');
+    const summaryLanguageSelect = document.getElementById('summary-language');
+    if (summaryLanguageSelect) {
+        const options = summaryLanguageSelect.options;
+        options[0].textContent = t('auto_language');
+        options[1].textContent = t('chinese');
+        options[2].textContent = t('english');
+    }
+    
+    const summaryLengthSelect = document.getElementById('summary-length');
     if (summaryLengthSelect) {
-        for (let i = 0; i < summaryLengthSelect.options.length; i++) {
-            const option = summaryLengthSelect.options[i];
-            if (option.value === 'short') option.text = t('short');
-            if (option.value === 'medium') option.text = t('medium');
-            if (option.value === 'long') option.text = t('long');
+        const options = summaryLengthSelect.options;
+        options[0].textContent = t('short');
+        options[1].textContent = t('medium');
+        options[2].textContent = t('long');
+    }
+    
+    // 更新API提供商标题
+    document.querySelectorAll('.api-provider .provider-header h5').forEach(title => {
+        if (title.textContent.includes('OpenAI')) {
+            title.innerHTML = title.innerHTML.replace(/OpenAI/g, 'OpenAI');
+        } else if (title.textContent.includes('DeepSeek')) {
+            title.innerHTML = title.innerHTML.replace(/DeepSeek/g, 'DeepSeek');
+        } else if (title.textContent.includes('Anthropic')) {
+            title.innerHTML = title.innerHTML.replace(/Anthropic Claude/g, t('anthropic_claude'));
         }
+    });
+    
+    // 更新API设置标签
+    document.querySelectorAll('.api-provider .setting-item label').forEach(label => {
+        if (label.textContent.includes('API Key')) {
+            label.textContent = t('api_key');
+        } else if (label.textContent.includes('模型')) {
+            label.textContent = t('model');
+        }
+    });
+    
+    // 更新保存按钮
+    const saveApiSettings = document.getElementById('save-api-settings');
+    if (saveApiSettings) {
+        saveApiSettings.innerHTML = `<i class="fas fa-save"></i> ${t('save')}`;
     }
     
-    // 更新搜索框占位符
-    document.getElementById('search-input').placeholder = t('search_placeholder');
-    
-    // 更新添加订阅源按钮
-    document.getElementById('add-source-btn').innerText = t('add_source');
-    
-    // 更新当前打开的文章（如果有）
-    if (currentArticleData) {
-        displayArticleContent(currentArticleData);
-    } else {
-        resetArticleContent(t('no_article_selected'));
+    // 应用设置面板
+    const appSettingsHeader = document.querySelector('#app-settings-panel .settings-header h3');
+    if (appSettingsHeader) {
+        appSettingsHeader.innerHTML = `<i class="fas fa-cog"></i> ${t('app_settings')}`;
     }
     
-    // 更新所有订阅源标签
-    renderRssSources(rssSources);
-    
-    // 更新所有文章列表（如果有）
-    if (currentArticles && currentArticles.length > 0) {
-        renderArticlesList(currentArticles);
+    const closeAppSettings = document.getElementById('close-app-settings');
+    if (closeAppSettings) {
+        closeAppSettings.title = t('close');
     }
     
-    // 更新翻译下拉菜单
-    const translateDropdownItems = document.querySelectorAll('.dropdown-content a');
-    if (translateDropdownItems.length >= 2) {
-        translateDropdownItems[0].textContent = t('translate_to_chinese');
-        translateDropdownItems[1].textContent = t('translate_to_english');
+    // 更新应用设置标题
+    const appSettingSections = document.querySelectorAll('#app-settings-panel .settings-section h4');
+    if (appSettingSections.length > 0) {
+        appSettingSections[0].textContent = t('interface_options');
     }
     
-    // 更新应用设置面板
-    document.querySelector('#app-settings-panel .settings-header h3').innerHTML = 
-        `<i class="fas fa-cog"></i> ${t('app_settings')}`;
-    document.querySelector('#app-settings-panel .settings-section h4').textContent = t('interface_options');
-    document.querySelector('#app-settings-panel label[for="app-language"]').textContent = t('app_language');
-    document.querySelector('#app-settings-panel label[for="font-scale-setting"]').textContent = t('font_size');
-    document.querySelector('#app-settings-panel .toggle .label-text').textContent = t('dark_mode');
-    document.querySelector('#app-settings-panel .setting-description').textContent = 
-        t('language_change_restart');
-    document.querySelector('#save-app-settings').innerHTML = 
-        `<i class="fas fa-save"></i> ${t('save')}`;
-    document.querySelector('#close-app-settings').title = t('close');
+    // 更新应用设置选项
+    const appLanguageLabel = document.querySelector('label[for="app-language"]');
+    if (appLanguageLabel) {
+        appLanguageLabel.textContent = t('app_language');
+    }
+    
+    const fontScaleLabel = document.querySelector('label[for="font-scale-setting"]');
+    if (fontScaleLabel) {
+        fontScaleLabel.textContent = t('font_size');
+    }
+    
+    const darkModeLabel = document.querySelector('#dark-mode-setting + .toggle-slider').parentNode.querySelector('.label-text');
+    if (darkModeLabel) {
+        darkModeLabel.textContent = t('dark_mode');
+    }
+    
+    // 更新语言选择下拉菜单
+    const appLanguageSelect = document.getElementById('app-language');
+    if (appLanguageSelect) {
+        const options = appLanguageSelect.options;
+        options[0].textContent = '简体中文';
+        options[1].textContent = 'English';
+    }
+    
+    // 更新保存按钮
+    const saveAppSettings = document.getElementById('save-app-settings');
+    if (saveAppSettings) {
+        saveAppSettings.innerHTML = `<i class="fas fa-save"></i> ${t('save')}`;
+    }
 }
 
 // RSS阅读器主脚本 - 支持三栏布局
@@ -803,26 +963,38 @@ document.addEventListener("DOMContentLoaded", function() {
     // 加载用户设置
     async function loadSettings() {
         try {
-            const settings = await window.electronAPI.getSettings();
-            if (settings) {
-                userSettings = { ...userSettings, ...settings };
-                console.log("加载用户设置:", userSettings);
+            const settings = await window.electronAPI.loadSettings();
+            userSettings = { ...userSettings, ...settings };
+            
+            // 设置当前语言
+            if (userSettings.language) {
+                currentLanguage = userSettings.language;
+                console.log("从设置加载语言:", currentLanguage);
             }
+            
+            // 应用设置到UI
+            applySettingsToUI();
+            
+            // 更新UI语言
+            updateUILanguage();
+            
+            return userSettings;
         } catch (error) {
             console.error("加载设置失败:", error);
+            return userSettings;
         }
-        
-        applySettingsToUI();
     }
     
     // 保存用户设置
     async function saveSettings() {
         try {
             await window.electronAPI.saveSettings(userSettings);
-            console.log("保存用户设置:", userSettings);
+            showNotification(t('settings_saved'));
+            return true;
         } catch (error) {
             console.error("保存设置失败:", error);
-            showNotification("保存设置失败", "error");
+            showNotification(t('save_settings_error'), "error");
+            return false;
         }
     }
     
