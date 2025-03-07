@@ -16,7 +16,7 @@
     "make:win": "npm-run-all make:win-x64 make:win-arm64",
     "make:mac": "npm-run-all make:mac-x64 make:mac-arm64",
     "make:linux": "npm-run-all make:linux-x64 make:linux-arm64",
-    "make:all": "npm-run-all make:win make:mac make:linux"
+    "make:all": "npm run make:win"
   },
   "repository": {
     "type": "git",

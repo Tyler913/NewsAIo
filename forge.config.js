@@ -16,16 +16,16 @@ module.exports = {
             config: {
                 authors: 'TylerHong, BillXu',
                 description: 'AI-powered RSS reader with automatic summarization',
-                iconUrl: 'https://raw.githubusercontent.com/Tyler913/NewsAIo/main/assets/icon.ico',
-                setupIcon: './assets/icon.ico',
+                // iconUrl: 'https://raw.githubusercontent.com/Tyler913/NewsAIo/main/assets/icon.ico',
+                // setupIcon: './assets/icon.ico',
             },
         },
         // macOS版本 - DMG格式
         {
             name: '@electron-forge/maker-dmg',
             config: {
-                icon: './assets/icon.icns',
-                background: './assets/dmg-background.png',  // 如果有DMG背景图
+                // icon: './assets/icon.icns',
+                // background: './assets/dmg-background.png',  // 如果有DMG背景图
                 format: 'ULFO',
             },
         },
@@ -36,7 +36,7 @@ module.exports = {
                 options: {
                     maintainer: 'TylerHong, BillXu',
                     homepage: 'https://github.com/Tyler913/NewsAIo',
-                    icon: './assets/icon.png',
+                    // icon: './assets/icon.png',
                 },
             },
         },
@@ -47,7 +47,7 @@ module.exports = {
                 options: {
                     maintainer: 'TylerHong, BillXu',
                     homepage: 'https://github.com/Tyler913/NewsAIo',
-                    icon: './assets/icon.png',
+                    // icon: './assets/icon.png',
                 },
             },
         },
