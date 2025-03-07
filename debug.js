@@ -1,3 +1,249 @@
+// ============= 语言本地化系统 =============
+
+// 默认语言设置
+let currentLanguage = 'zh-CN'; // 默认为中文
+
+// 本地化字符串
+const i18n = {
+    'zh-CN': {
+        // 应用程序主要UI
+        'app_title': 'NewsAIo - 智能RSS阅读器',
+        'feed_list': '订阅源',
+        'article_list': '文章列表',
+        'article_content': '文章内容',
+        'loading': '加载中...',
+        'no_article_selected': '请先选择一篇文章',
+        'no_content': '此文章没有内容',
+        'read_original': '在浏览器中阅读原文',
+        'search_placeholder': '搜索文章...',
+        'add_source': '添加订阅源',
+        'remove_source': '删除',
+        'refresh_all': '刷新全部',
+        
+        // AI摘要和翻译
+        'ai_summary': 'AI 摘要',
+        'generate_summary': '生成摘要',
+        'translation': '中文翻译',
+        'english_translation': 'English Translation',
+        'auto_summarize': '自动总结文章',
+        'auto_summarize_desc': '打开后，当你选择一篇文章时将自动生成摘要',
+        'use_stream_mode': '使用流式模式',
+        'use_stream_mode_desc': '打开后，AI生成的文本将以打字效果逐字显示',
+        'translate_to': '翻译成',
+        'translate_button': '翻译文章',
+        
+        // 设置面板
+        'settings': '设置',
+        'ai_settings': 'AI设置',
+        'app_settings': '应用设置',
+        'api_provider': 'API提供商',
+        'api_key': 'API密钥',
+        'summary_length': '摘要长度',
+        'short': '简短',
+        'medium': '中等',
+        'long': '详细',
+        'language': '语言',
+        'font_size': '字体大小',
+        'dark_mode': '暗色模式',
+        'save': '保存',
+        
+        // 消息和通知
+        'settings_saved': '设置已保存',
+        'api_key_required': '需要API密钥才能使用AI功能',
+        'summarization_error': '生成摘要时出错',
+        'translation_error': '翻译时出错',
+        'source_added': '订阅源已添加',
+        'source_removed': '订阅源已删除',
+        'connection_error': '连接错误，请检查网络',
+        'invalid_url': '无效的URL',
+        
+        // 新增翻译相关
+        'translate_to_chinese': '翻译为中文',
+        'translate_to_english': '翻译为英文',
+        'language_change_restart': '语言设置已更改，请重启应用以获得最佳体验',
+        'save_settings_error': '保存设置失败',
+        'app_language': '应用语言',
+        'interface_options': '界面选项',
+        'close': '关闭'
+    },
+    'en-US': {
+        // Main UI
+        'app_title': 'NewsAIo - Intelligent RSS Reader',
+        'feed_list': 'Subscriptions',
+        'article_list': 'Articles',
+        'article_content': 'Article Content',
+        'loading': 'Loading...',
+        'no_article_selected': 'Please select an article first',
+        'no_content': 'This article has no content',
+        'read_original': 'Read original in browser',
+        'search_placeholder': 'Search articles...',
+        'add_source': 'Add Source',
+        'remove_source': 'Remove',
+        'refresh_all': 'Refresh All',
+        
+        // AI Summary and Translation
+        'ai_summary': 'AI Summary',
+        'generate_summary': 'Generate Summary',
+        'translation': '中文翻译',
+        'english_translation': 'English Translation',
+        'auto_summarize': 'Auto Summarize Articles',
+        'auto_summarize_desc': 'When enabled, summaries will be generated automatically when you select an article',
+        'use_stream_mode': 'Use Streaming Mode',
+        'use_stream_mode_desc': 'When enabled, AI-generated text will be displayed character by character with a typing effect',
+        'translate_to': 'Translate to',
+        'translate_button': 'Translate Article',
+        
+        // Settings
+        'settings': 'Settings',
+        'ai_settings': 'AI Settings',
+        'app_settings': 'App Settings',
+        'api_provider': 'API Provider',
+        'api_key': 'API Key',
+        'summary_length': 'Summary Length',
+        'short': 'Short',
+        'medium': 'Medium',
+        'long': 'Long',
+        'language': 'Language',
+        'font_size': 'Font Size',
+        'dark_mode': 'Dark Mode',
+        'save': 'Save',
+        
+        // Messages and Notifications
+        'settings_saved': 'Settings saved',
+        'api_key_required': 'API key is required to use AI features',
+        'summarization_error': 'Error generating summary',
+        'translation_error': 'Error translating article',
+        'source_added': 'Source added',
+        'source_removed': 'Source removed',
+        'connection_error': 'Connection error, please check your network',
+        'invalid_url': 'Invalid URL',
+        
+        // 新增翻译相关
+        'translate_to_chinese': 'Translate to Chinese',
+        'translate_to_english': 'Translate to English',
+        'language_change_restart': 'Language setting changed, please restart the app for best experience',
+        'save_settings_error': 'Failed to save settings',
+        'app_language': 'App Language',
+        'interface_options': 'Interface Options',
+        'close': 'Close'
+    }
+};
+
+// 获取本地化字符串的函数
+function t(key) {
+    if (i18n[currentLanguage] && i18n[currentLanguage][key]) {
+        return i18n[currentLanguage][key];
+    }
+    // 如果找不到翻译，返回key
+    console.warn(`Missing translation for key: ${key} in language: ${currentLanguage}`);
+    return key;
+}
+
+// 切换语言的函数
+async function switchLanguage(language) {
+    if (!i18n[language]) {
+        console.error(`Language ${language} is not supported!`);
+        return;
+    }
+    
+    currentLanguage = language;
+    
+    // 更新当前用户设置
+    userSettings.language = language;
+    await saveSettings();
+    
+    // 更新UI文本
+    updateUILanguage();
+    
+    // 显示语言切换通知
+    showNotification(t('settings_saved'));
+}
+
+// 更新UI文本的函数
+function updateUILanguage() {
+    // 更新顶部标题
+    document.title = t('app_title');
+    
+    // 更新侧边栏标题
+    document.getElementById('sidebar-header').innerHTML = `<i class="fas fa-rss"></i> ${t('feed_list')}`;
+    
+    // 更新文章列表标题
+    document.getElementById('articles-header').innerHTML = `<i class="fas fa-newspaper"></i> ${t('article_list')}`;
+    
+    // 更新文章内容标题
+    document.getElementById('content-header').innerHTML = `<i class="fas fa-book-open"></i> ${t('article_content')}`;
+    
+    // 更新按钮和标签文本
+    document.getElementById('generate-summary-btn').innerText = t('generate_summary');
+    document.getElementById('translate-article-btn').innerText = t('translate_button');
+    document.getElementById('auto-summarize-label').innerText = t('auto_summarize');
+    document.getElementById('auto-summarize-description').innerText = t('auto_summarize_desc');
+    document.getElementById('stream-mode-label').innerText = t('use_stream_mode');
+    document.getElementById('stream-mode-description').innerText = t('use_stream_mode_desc');
+    
+    // 更新设置面板
+    document.getElementById('ai-settings-tab').innerText = t('ai_settings');
+    document.getElementById('app-settings-tab').innerText = t('app_settings');
+    document.getElementById('api-provider-label').innerText = t('api_provider');
+    document.getElementById('api-key-label').innerText = t('api_key');
+    document.getElementById('summary-length-label').innerText = t('summary_length');
+    document.getElementById('language-label').innerText = t('language');
+    document.getElementById('font-size-label').innerText = t('font_size');
+    document.getElementById('dark-mode-label').innerText = t('dark_mode');
+    
+    // 更新下拉菜单选项
+    const summaryLengthSelect = document.getElementById('summary-length-select');
+    if (summaryLengthSelect) {
+        for (let i = 0; i < summaryLengthSelect.options.length; i++) {
+            const option = summaryLengthSelect.options[i];
+            if (option.value === 'short') option.text = t('short');
+            if (option.value === 'medium') option.text = t('medium');
+            if (option.value === 'long') option.text = t('long');
+        }
+    }
+    
+    // 更新搜索框占位符
+    document.getElementById('search-input').placeholder = t('search_placeholder');
+    
+    // 更新添加订阅源按钮
+    document.getElementById('add-source-btn').innerText = t('add_source');
+    
+    // 更新当前打开的文章（如果有）
+    if (currentArticleData) {
+        displayArticleContent(currentArticleData);
+    } else {
+        resetArticleContent(t('no_article_selected'));
+    }
+    
+    // 更新所有订阅源标签
+    renderRssSources(rssSources);
+    
+    // 更新所有文章列表（如果有）
+    if (currentArticles && currentArticles.length > 0) {
+        renderArticlesList(currentArticles);
+    }
+    
+    // 更新翻译下拉菜单
+    const translateDropdownItems = document.querySelectorAll('.dropdown-content a');
+    if (translateDropdownItems.length >= 2) {
+        translateDropdownItems[0].textContent = t('translate_to_chinese');
+        translateDropdownItems[1].textContent = t('translate_to_english');
+    }
+    
+    // 更新应用设置面板
+    document.querySelector('#app-settings-panel .settings-header h3').innerHTML = 
+        `<i class="fas fa-cog"></i> ${t('app_settings')}`;
+    document.querySelector('#app-settings-panel .settings-section h4').textContent = t('interface_options');
+    document.querySelector('#app-settings-panel label[for="app-language"]').textContent = t('app_language');
+    document.querySelector('#app-settings-panel label[for="font-scale-setting"]').textContent = t('font_size');
+    document.querySelector('#app-settings-panel .toggle .label-text').textContent = t('dark_mode');
+    document.querySelector('#app-settings-panel .setting-description').textContent = 
+        t('language_change_restart');
+    document.querySelector('#save-app-settings').innerHTML = 
+        `<i class="fas fa-save"></i> ${t('save')}`;
+    document.querySelector('#close-app-settings').title = t('close');
+}
+
 // RSS阅读器主脚本 - 支持三栏布局
 document.addEventListener("DOMContentLoaded", function() {
     console.log("应用初始化...");
@@ -77,6 +323,21 @@ document.addEventListener("DOMContentLoaded", function() {
     
     // ============= 应用初始化 =============
     
+    // 初始化变量
+    window.rssSources = [];
+    window.currentArticles = [];
+    window.currentArticleData = null;
+    window.currentRssUrl = null;
+    window.currentArticleIndex = null;
+    window.streamedSummary = '';
+    window.userSettings = {
+        darkMode: false,
+        fontScale: 1,
+        autoSummarize: false,
+        useStreamMode: true,
+        language: 'zh-CN'
+    };
+    
     // 启动时加载设置
     loadSettings();
     loadApiSettings();
@@ -84,8 +345,9 @@ document.addEventListener("DOMContentLoaded", function() {
     // 启动时加载RSS源
     loadRssSources();
     
-    // 初始化AI设置面板
+    // 初始化AI设置面板和应用设置面板
     initAISettingsPanel();
+    initAppSettingsPanel();
     
     // ============= AI设置面板 =============
     
@@ -95,6 +357,18 @@ document.addEventListener("DOMContentLoaded", function() {
         streamModeToggle.checked = userSettings.useStreamMode;
         summaryLanguageSelect.value = userSettings.summaryLanguage;
         summaryLengthSelect.value = userSettings.summaryLength;
+        
+        // 设置字体大小
+        document.documentElement.style.fontSize = userSettings.fontScale + 'em';
+        
+        // 设置暗色模式
+        if (userSettings.darkMode) {
+            document.body.classList.add('dark-mode');
+            document.documentElement.classList.add('dark');
+        } else {
+            document.body.classList.remove('dark-mode');
+            document.documentElement.classList.remove('dark');
+        }
         
         // API提供商设置
         const activeProvider = apiSettings.activeProvider;
@@ -136,20 +410,30 @@ document.addEventListener("DOMContentLoaded", function() {
     
     // 生成摘要
     async function generateSummary(article) {
+        // 如果没有传入文章，使用当前显示的文章
+        if (!article) {
+            if (currentArticleData) {
+                article = currentArticleData;
+            } else {
+                showNotification(t("no_article_selected"), "error");
+                return;
+            }
+        }
+        
         // 检查是否有API密钥
         const provider = apiSettings.activeProvider;
         const apiKey = apiSettings.providers[provider].apiKey;
         
         if (!apiKey) {
-            showNotification("请先在AI设置中配置API密钥", "error");
+            showNotification(t("api_key_required"), "error");
             aiSettingsPanel.classList.add("active");
             return;
         }
         
-        // 获取文章内容 - 修复：从article对象直接获取内容
-        const content = article.content;
+        // 获取文章内容 - 修复：确保能够获取到文章内容
+        const content = article.content || article.contentSnippet || article.description;
         if (!content || content.trim() === "") {
-            showNotification("文章内容为空，无法生成摘要", "error");
+            showNotification(t("no_content"), "error");
             return;
         }
         
@@ -164,7 +448,7 @@ document.addEventListener("DOMContentLoaded", function() {
         summaryDiv.className = "ai-summary";
         summaryDiv.innerHTML = `
             <div class="ai-summary-header">
-                <h3 class="ai-summary-title"><i class="fas fa-robot"></i> AI 摘要</h3>
+                <h3 class="ai-summary-title"><i class="fas fa-robot"></i> ${t('ai_summary')}</h3>
             </div>
             <div class="summary-content">
                 <div class="summary-loading">
@@ -763,88 +1047,108 @@ document.addEventListener("DOMContentLoaded", function() {
     
     // ============= 文章内容处理 =============
     
+    // 辅助函数：获取文章内容，处理可能的空内容情况
+    function getArticleContent(article) {
+        // 尝试获取文章内容
+        let content = article.content || article.contentSnippet || article.description || '';
+        
+        // 如果内容为空
+        if (!content || content.trim() === '') {
+            return `<p class="empty-state">${t('no_content')}</p>`;
+        }
+        
+        return content;
+    }
+    
     // 修改显示文章内容的函数，添加自动摘要和滚动到顶部
     function displayArticleContent(article) {
+        // 重置滚动位置到顶部
+        articleContainer.scrollTop = 0;
+        
+        // 显示"加载中..."
+        articleContainer.innerHTML = `<div class="loading-message">${t('loading')}</div>`;
+        
+        // 检查是否有文章
         if (!article) {
-            resetArticleContent("文章不存在");
+            resetArticleContent();
             return;
         }
         
-        console.log(`显示文章: ${article.title}`);
-        
-        // 保存当前文章
+        // 保存当前文章的引用
         currentArticleData = article;
+        currentArticleIndex = currentArticles.indexOf(article);
         
-        // 更新标题
-        contentHeader.innerHTML = `<i class="fas fa-book-open"></i> 文章内容`;
+        // 准备文章内容HTML
+        let contentHtml = '';
         
-        // 提取发布日期
-        let dateStr = '';
-        if (article.pubDate) {
-            const date = new Date(article.pubDate);
-            dateStr = date.toLocaleString();
-        }
+        // 1. 文章标题和日期
+        const pubDate = article.pubDate ? new Date(article.pubDate).toLocaleString() : '';
+        contentHtml += `<div class="article-header">
+            <h2 class="article-title">${article.title}</h2>
+            <div class="article-date">${pubDate}</div>
+        </div>`;
         
-        // 创建文章容器
-        articleContainer.innerHTML = `
-            <div class="article-header">
-                <h1 class="article-title">${article.title || '无标题'}</h1>
-                ${dateStr ? `<div class="article-date">${dateStr}</div>` : ''}
-                ${article.creator ? `<div class="article-author">作者: ${article.creator}</div>` : ''}
-            </div>
-            <div class="article-content"></div>
-            ${article.link ? `<p class="read-more"><a href="${article.link}" target="_blank"><i class="fas fa-external-link-alt"></i> 阅读原文</a></p>` : ''}
-        `;
-        
-        // 添加文章内容
-        const contentDiv = articleContainer.querySelector(".article-content");
-        if (contentDiv) {
-            // 尝试获取文章内容
-            let content = article.content || article.contentSnippet || article.description || '';
-            
-            if (!content || content.trim() === '') {
-                contentDiv.innerHTML = '<p class="empty-state">此文章没有内容</p>';
-            } else {
-                try {
-                    contentDiv.innerHTML = content;
-                } catch (e) {
-                    console.error("设置文章内容失败:", e);
-                    contentDiv.textContent = content;
-                }
-            }
-        }
-        
-        // 添加现有的摘要
-        if (article.summary && article.summary.trim() !== '') {
-            const summaryDiv = document.createElement("div");
-            summaryDiv.className = "ai-summary";
-            summaryDiv.innerHTML = `
+        // 2. AI摘要区域(如果存在)
+        if (article.summary) {
+            contentHtml += `
+            <div class="ai-summary ${article.summaryIsStreaming ? 'streaming' : ''}" style="font-size: inherit;">
                 <div class="ai-summary-header">
-                    <h3 class="ai-summary-title"><i class="fas fa-robot"></i> AI 摘要</h3>
+                    <h4 class="ai-summary-title"><i class="fas fa-robot"></i> ${t('ai_summary')}</h4>
                 </div>
-                <div class="summary-content">
-                    <div class="summary-text">${article.summary}</div>
+                <div class="summary-content ${article.summaryIsStreaming ? 'streaming-content' : ''}" style="font-size: inherit;">
+                    ${article.summary}
                 </div>
-            `;
-            
-            // 插入到文章内容顶部
-            articleContainer.insertBefore(summaryDiv, articleContainer.firstChild);
-        }
-        // 如果没有摘要且启用了自动摘要，则生成摘要
-        else if (userSettings.autoSummarize) {
-            generateSummary(article);
+            </div>`;
         }
         
-        // 将文章容器滚动到顶部
-        if (articleContainer) {
-            articleContainer.scrollTop = 0;
+        // 3. 翻译区域(如果存在)
+        if (article.translation) {
+            const translationTitle = article.translationLanguage === 'zh-CN' ? t('translation') : t('english_translation');
+            contentHtml += `
+            <div class="translation-content" style="font-size: inherit;">
+                <h4 class="translation-header"><i class="fas fa-language"></i> ${translationTitle}</h4>
+                <div class="${article.translationIsStreaming ? 'streaming-content' : ''}" style="font-size: inherit;">
+                    ${article.translation}
+                </div>
+            </div>`;
         }
+        
+        // 4. 文章主要内容
+        contentHtml += `<div class="article-content" style="font-size: inherit;">${getArticleContent(article)}</div>`;
+        
+        // 5. "阅读原文"链接
+        if (article.link) {
+            contentHtml += `
+            <div class="read-more" style="font-size: inherit;">
+                <a href="#" onclick="window.electronAPI.openExternal('${article.link}'); return false;">
+                    <i class="fas fa-external-link-alt"></i> ${t('read_original')}
+                </a>
+            </div>`;
+        }
+        
+        // 设置内容并更新标题
+        articleContainer.innerHTML = contentHtml;
+        document.getElementById('content-header').innerHTML = `<i class="fas fa-book-open"></i> ${t('article_content')}`;
+        
+        // 确保所有内容区域都继承字体大小
+        const contentElements = articleContainer.querySelectorAll('.article-content, .ai-summary, .translation-content');
+        contentElements.forEach(element => {
+            element.style.fontSize = 'inherit';
+        });
+        
+        // 确保再次滚动到顶部
+        setTimeout(() => {
+            articleContainer.scrollTop = 0;
+        }, 100);
     }
     
     // 重置文章内容
-    function resetArticleContent(message = "请先选择一篇文章") {
+    function resetArticleContent(message = null) {
+        if (!message) {
+            message = t('no_article_selected');
+        }
         articleContainer.innerHTML = `<p class="empty-state">${message}</p>`;
-        contentHeader.innerHTML = `<i class="fas fa-book-open"></i> 文章内容`;
+        document.getElementById('content-header').innerHTML = `<i class="fas fa-book-open"></i> ${t('article_content')}`;
     }
     
     // ============= 添加RSS源处理 =============
@@ -1034,4 +1338,125 @@ document.addEventListener("DOMContentLoaded", function() {
             showNotification("AI设置已保存");
         });
     }
+
+    // 初始化应用设置面板
+    function initAppSettingsPanel() {
+        console.log("初始化应用设置面板");
+        
+        const appSettingsPanel = document.getElementById('app-settings-panel');
+        const appSettingsToggle = document.getElementById('app-settings-toggle');
+        const closeAppSettings = document.getElementById('close-app-settings');
+        const appLanguageSelect = document.getElementById('app-language');
+        const fontScaleSetting = document.getElementById('font-scale-setting');
+        const fontScaleValue = document.getElementById('font-scale-value');
+        const darkModeSetting = document.getElementById('dark-mode-setting');
+        const saveAppSettingsBtn = document.getElementById('save-app-settings');
+        
+        // 打开应用设置面板
+        appSettingsToggle.addEventListener('mousedown', function(e) {
+            e.stopPropagation(); // 阻止事件冒泡
+            appSettingsPanel.classList.add('active');
+            
+            // 设置当前值
+            appLanguageSelect.value = userSettings.language || 'zh-CN';
+            fontScaleSetting.value = userSettings.fontScale || 1;
+            fontScaleValue.textContent = userSettings.fontScale || 1;
+            darkModeSetting.checked = userSettings.darkMode || false;
+        });
+        
+        // 关闭应用设置面板
+        closeAppSettings.addEventListener('mousedown', function(e) {
+            e.stopPropagation();
+            appSettingsPanel.classList.remove('active');
+        });
+        
+        // 点击面板外关闭
+        document.addEventListener('mousedown', function(e) {
+            if (appSettingsPanel.classList.contains('active') && 
+                !appSettingsPanel.contains(e.target) && 
+                e.target !== appSettingsToggle) {
+                appSettingsPanel.classList.remove('active');
+            }
+        });
+        
+        // 字体大小滑块变化
+        fontScaleSetting.addEventListener('input', function() {
+            const newSize = this.value;
+            fontScaleValue.textContent = newSize;
+            
+            // 设置根元素的字体大小
+            document.documentElement.style.fontSize = newSize + 'em';
+            
+            // 强制更新文章内容区域的字体大小
+            const articleContent = document.querySelector('.article-content');
+            if (articleContent) {
+                articleContent.style.fontSize = 'inherit';
+            }
+            
+            // 强制更新AI摘要区域的字体大小
+            const aiSummary = document.querySelector('.ai-summary');
+            if (aiSummary) {
+                aiSummary.style.fontSize = 'inherit';
+            }
+            
+            // 强制更新翻译区域的字体大小
+            const translationContent = document.querySelector('.translation-content');
+            if (translationContent) {
+                translationContent.style.fontSize = 'inherit';
+            }
+        });
+        
+        // 保存应用设置
+        saveAppSettingsBtn.addEventListener('mousedown', async function(e) {
+            e.stopPropagation();
+            
+            try {
+                const newSettings = {
+                    ...userSettings,
+                    language: appLanguageSelect.value,
+                    fontScale: parseFloat(fontScaleSetting.value),
+                    darkMode: darkModeSetting.checked
+                };
+                
+                // 检查语言是否改变
+                const languageChanged = userSettings.language !== newSettings.language;
+                
+                // 保存设置
+                userSettings = newSettings;
+                await saveSettings();
+                
+                // 应用设置
+                if (languageChanged) {
+                    // 切换语言
+                    await switchLanguage(userSettings.language);
+                    showNotification(t('settings_saved') + ' - ' + t('language_change_restart'));
+                } else {
+                    // 应用其他设置
+                    document.documentElement.style.fontSize = userSettings.fontScale + 'em';
+                    if (userSettings.darkMode) {
+                        document.body.classList.add('dark-mode');
+                        document.documentElement.classList.add('dark');
+                    } else {
+                        document.body.classList.remove('dark-mode');
+                        document.documentElement.classList.remove('dark');
+                    }
+                    
+                    showNotification(t('settings_saved'));
+                }
+                
+                // 关闭设置面板
+                appSettingsPanel.classList.remove('active');
+            } catch (error) {
+                console.error('保存应用设置失败:', error);
+                showNotification(t('save_settings_error'), 'error');
+            }
+        });
+    }
+
+    // 加载设置并应用语言
+    loadSettings().then(() => {
+        // 应用当前语言设置
+        currentLanguage = userSettings.language || 'zh-CN';
+        updateUILanguage();
+    });
 }); 

@@ -14,22 +14,26 @@
     --border-radius: 10px;
     --scrollbar-thumb: #c1c1c1;
     --scrollbar-track: #f1f1f1;
+    --article-bg: rgba(255, 255, 255, 0.5);
+    --article-text: #333;
 }
 
 :root.dark {
     --primary-color: #5d87c7;
     --primary-color-light: #7da1e0;
-    --primary-color-dark: #3b5998;
-    --secondary-color: #e67e22;
+    --primary-color-dark: #2c4a7c;
+    --secondary-color: #f39c12;
     --text-color: #e0e0e0;
     --text-color-light: #a0a0a0;
-    --background-color: #121212;
-    --card-bg-color: rgba(30, 30, 30, 0.75);
+    --background-color: #1a1a1a;
+    --card-bg-color: rgba(30, 30, 30, 0.95);
     --border-color: rgba(255, 255, 255, 0.1);
     --hover-color: rgba(255, 255, 255, 0.05);
     --shadow-color: rgba(0, 0, 0, 0.5);
     --scrollbar-thumb: #555;
     --scrollbar-track: #333;
+    --article-bg: rgba(35, 35, 35, 0.95);
+    --article-text: #e0e0e0;
 }
 
 * {
@@ -181,13 +185,13 @@ ul {
 li {
     padding: 12px 15px;
     margin-bottom: 8px;
-    background-color: rgba(255, 255, 255, 0.5);
+    background-color: var(--article-bg);
     border-radius: 6px;
     cursor: pointer;
     transition: all 0.2s ease;
     border: 1px solid var(--border-color);
     color: var(--text-color);
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 2px 5px var(--shadow-color);
 }
 
 li:hover {
@@ -203,12 +207,13 @@ li:active {
 #article-content {
     padding: 15px;
     line-height: 1.8;
-    color: var(--text-color);
-    background-color: rgba(255, 255, 255, 0.5);
+    color: var(--article-text);
+    background-color: var(--article-bg);
     border-radius: var(--border-radius);
     border: 1px solid var(--border-color);
     overflow-y: auto;
     height: 100%;
+    font-size: inherit;
 }
 
 #article-content img {
@@ -555,27 +560,6 @@ li:active {
     }
 }
 
-/* Dark mode conversion */
-body.dark-mode {
-    color-scheme: dark;
-}
-
-body.dark-mode {
-    background-image: linear-gradient(135deg, var(--background-color) 0%, rgba(59, 89, 152, 0.1) 100%);
-}
-
-body.dark-mode .ai-summary {
-    background: linear-gradient(135deg, rgba(59, 89, 152, 0.1) 0%, rgba(59, 89, 152, 0.2) 100%);
-}
-
-body.dark-mode li {
-    background-color: rgba(40, 40, 40, 0.5);
-}
-
-body.dark-mode #article-content {
-    background-color: rgba(40, 40, 40, 0.5);
-}
-
 /* 为toggle开关添加样式 */
 .toggle-option {
     display: flex;
@@ -700,6 +684,8 @@ input:checked + .toggle-slider:before {
 .article-content {
     line-height: 1.8;
     margin-top: 20px;
+    color: var(--article-text);
+    font-size: inherit;
 }
 
 /* 修改暗色模式下的切换开关样式 */
@@ -904,19 +890,6 @@ body.dark-mode .setting-description {
     border: 1px solid var(--border-color);
     background-color: var(--card-bg-color);
     color: var(--text-color);
-}
-
-/* 黑暗模式下的调整 */
-body.dark-mode .main-tabs {
-    background-color: var(--primary-color-dark);
-}
-
-body.dark-mode .tab-item:hover {
-    background-color: rgba(255, 255, 255, 0.05);
-}
-
-body.dark-mode .tab-item.active {
-    background-color: rgba(255, 255, 255, 0.1);
 }
 
 /* 翻译内容样式 */
