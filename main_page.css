@@ -16,10 +16,17 @@
     --scrollbar-track: #f1f1f1;
     --article-bg: rgba(255, 255, 255, 0.5);
     --article-text: #333;
+    --article-title: #2c3e50;
+    --article-meta: #666;
+    --card-hover: #f5f7fa;
+    --notification-bg: rgba(255, 255, 255, 0.95);
+    --ai-summary-bg: rgba(74, 111, 165, 0.1);
+    --ai-summary-text: #333;
+    --column-header-bg: #f8f9fa;
 }
 
 :root.dark {
-    --primary-color: #5d87c7;
+    --primary-color: #6889c0;
     --primary-color-light: #7da1e0;
     --primary-color-dark: #2c4a7c;
     --secondary-color: #f39c12;
@@ -33,7 +40,14 @@
     --scrollbar-thumb: #555;
     --scrollbar-track: #333;
     --article-bg: rgba(35, 35, 35, 0.95);
-    --article-text: #e0e0e0;
+    --article-text: #d0d0d0;
+    --article-title: #e0e0e0;
+    --article-meta: #888;
+    --card-hover: #2c2c2c;
+    --notification-bg: rgba(30, 30, 30, 0.95);
+    --ai-summary-bg: rgba(74, 111, 165, 0.2);
+    --ai-summary-text: #e0e0e0;
+    --column-header-bg: #1e1e1e;
 }
 
 * {
@@ -694,11 +708,11 @@ body.dark-mode .toggle-slider {
 }
 
 body.dark-mode .toggle-slider:before {
-    background-color: #ddd;
+    background-color: #888;
 }
 
 body.dark-mode input:checked + .toggle-slider {
-    background-color: var(--primary-color-light);
+    background-color: var(--primary-color);
 }
 
 body.dark-mode .setting-description {
@@ -911,5 +925,211 @@ body.dark-mode .setting-description {
 }
 
 body.dark-mode .translation-content {
-    background: rgba(230, 126, 34, 0.1);
+    background: rgba(230, 126, 34, 0.15);
+}
+
+/* 深色模式特定样式 */
+:root.dark {
+    background-color: var(--background-color);
+    color: var(--text-color);
+}
+
+:root.dark body {
+    background-color: var(--background-color);
+    color: var(--text-color);
+}
+
+:root.dark .container {
+    background-color: var(--background-color);
+}
+
+:root.dark .sources-column,
+:root.dark .articles-column,
+:root.dark .content-column {
+    background-color: var(--card-bg-color);
+    border-color: var(--border-color);
+}
+
+:root.dark .column-header {
+    background-color: var(--column-header-bg);
+    border-color: var(--border-color);
+    color: var(--text-color);
+}
+
+:root.dark .column-content {
+    background-color: var(--card-bg-color);
+}
+
+:root.dark .zone {
+    background: var(--card-bg-color);
+    border-color: var(--border-color);
+}
+
+:root.dark li {
+    background-color: var(--article-bg);
+    border-color: var(--border-color);
+    color: var(--text-color);
+}
+
+:root.dark li:hover {
+    background-color: var(--card-hover);
+}
+
+:root.dark .article-item {
+    background-color: var(--article-bg);
+}
+
+:root.dark .article-item .article-title {
+    color: var(--article-title);
+}
+
+:root.dark .article-item .article-date {
+    color: var(--article-meta);
+}
+
+:root.dark .article-container {
+    background-color: var(--card-bg-color);
+}
+
+:root.dark #article-content {
+    color: var(--article-text);
+    background-color: var(--article-bg);
+}
+
+:root.dark .ai-summary {
+    background: var(--ai-summary-bg);
+    border-left-color: var(--primary-color);
+    color: var(--ai-summary-text);
+}
+
+:root.dark .ai-summary strong {
+    color: var(--primary-color-light);
+}
+
+:root.dark .translation-content {
+    background: rgba(230, 126, 34, 0.2);
+    color: var(--text-color);
+}
+
+:root.dark .modal-content {
+    background: var(--card-bg-color);
+    color: var(--text-color);
+}
+
+:root.dark input[type="text"],
+:root.dark input[type="password"],
+:root.dark select {
+    background-color: rgba(0, 0, 0, 0.2);
+    color: var(--text-color);
+    border-color: var(--border-color);
+}
+
+:root.dark .notification {
+    background: var(--notification-bg);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+}
+
+:root.dark .empty-state {
+    color: var(--text-color-light);
+}
+
+:root.dark .error-message {
+    background: rgba(220, 53, 69, 0.2);
+    color: #ff6b6b;
+}
+
+:root.dark .settings-panel {
+    background: var(--card-bg-color);
+    border-left: 1px solid var(--border-color);
+}
+
+:root.dark .settings-section {
+    border-color: var(--border-color);
+}
+
+:root.dark .toggle-slider {
+    background-color: #555;
+}
+
+:root.dark .toggle-slider:before {
+    background-color: #888;
+}
+
+:root.dark input:checked + .toggle-slider {
+    background-color: var(--primary-color);
+}
+
+:root.dark input:checked + .toggle-slider:before {
+    background-color: #fff;
+}
+
+:root.dark .setting-description {
+    color: var(--text-color-light);
+}
+
+:root.dark .api-provider {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+:root.dark .provider-header {
+    background: rgba(0, 0, 0, 0.2);
+}
+
+:root.dark .icon-button {
+    color: var(--text-color);
+}
+
+:root.dark .icon-button:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+:root.dark .dropdown-content {
+    background-color: var(--card-bg-color);
+    border: 1px solid var(--border-color);
+}
+
+:root.dark .dropdown-content a {
+    color: var(--text-color);
+}
+
+:root.dark .dropdown-content a:hover {
+    background-color: var(--card-hover);
+}
+
+/* 修复深色模式下的滚动条样式 */
+:root.dark .zone::-webkit-scrollbar-track {
+    background: var(--scrollbar-track);
+}
+
+:root.dark .zone::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+}
+
+:root.dark .zone::-webkit-scrollbar-thumb:hover {
+    background: var(--primary-color);
+}
+
+/* 修复深色模式下的标题和按钮颜色 */
+:root.dark .header h2,
+:root.dark .column-header h2 {
+    color: var(--text-color);
+}
+
+:root.dark .primary-button {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+:root.dark .primary-button:hover {
+    background-color: var(--primary-color-light);
+}
+
+/* 修复深色模式下的链接颜色 */
+:root.dark a {
+    color: var(--primary-color-light);
+}
+
+:root.dark a:hover {
+    color: var(--primary-color);
 }
