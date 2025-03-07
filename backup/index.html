@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <title>News AIo</title>
+        <link rel="stylesheet" href="main_page.css" />
+    </head>
+
+    <body>
+        <div class="container">
+            <!-- Left Zone: RSS Sources -->
+            <div class="zone sidebar">
+                <div class="resize-handle" id="left-resize"></div>
+                <div class="header">
+                    <h2>RSS</h2>
+                    <!-- New Add Feed button -->
+                    <button id="add-rss-button" class="add-feed-button">+</button>
+                </div>
+                <ul id="rss-sources">
+                    <!-- RSS feeds will be loaded here -->
+                </ul>
+            </div>
+
+            <!-- Middle Zone: Article List -->
+            <div class="zone middle">
+                <div class="resize-handle" id="right-resize"></div>
+                <div class="header">
+                    <button id="middle-back-button" style="display: none">
+                        Back
+                    </button>
+                    <h2 id="articles-loading-indicator">Articles</h2>
+                </div>
+                <ul id="articles">
+                    <!-- Content will be loaded here -->
+                    Click on the RSS to start!
+                </ul>
+            </div>
+
+            <!-- Right Zone: Article Content -->
+            <div class="zone content">
+                <div class="header">
+                    <button id="article-back-button" style="display: none">
+                        Back
+                    </button>
+                <!-- New header for article title and settings -->
+                <div class="content-header">
+                        <h2>Article Content</h2>
+                    <div class="settings-buttons">
+                        <button id="dark-mode-toggle">Dark Mode</button>
+                        <button id="font-decrease">A–</button>
+                        <button id="font-increase">A+</button>
+                    </div>
+                </div>
+                </div>
+                <div id="article-content">
+                    <p>
+                        Please select an article from the list to view its
+                        content.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal for adding new RSS feed -->
+        <div id="add-feed-modal" class="modal">
+            <div class="modal-content">
+                <span class="close-button" id="modal-close-button"
+                    >&times;</span
+                >
+                <h2>Add New RSS Feed</h2>
+                <input
+                    type="text"
+                    id="rss-url-input"
+                    placeholder="Enter RSS feed URL"
+                />
+                <button id="submit-rss-button">Add Feed</button>
+                <div
+                    id="modal-error"
+                    style="display: none; color: red; margin-top: 10px"
+                ></div>
+            </div>
+        </div>
+
+        <!-- Custom Context Menu for RSS feed deletion -->
+        <div id="context-menu" class="context-menu">
+            <ul>
+                <li id="delete-feed">Delete</li>
+            </ul>
+        </div>
+
+        <script src="renderer.js"></script>
+    </body>
+</html>
