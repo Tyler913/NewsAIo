@@ -1,5 +1,5 @@
 {
-  "name": "News AIo",
+  "name": "news-aio",
   "version": "0.1.0",
   "description": "An application which fetch articles automatically & summarize using latest LLM",
   "main": "main.js",
@@ -7,11 +7,16 @@
     "start": "electron .",
     "package": "electron-forge package",
     "make": "electron-forge make",
-    "make:mac-x64": "electron-forge make --platform=darwin --arch=x64",
-    "make:mac-arm64": "electron-forge make --platform=darwin --arch=arm64",
     "make:win-x64": "electron-forge make --platform=win32 --arch=x64",
     "make:win-arm64": "electron-forge make --platform=win32 --arch=arm64",
-    "make:all": "npm-run-all make:win-x64 make:win-arm64 && npm-run-all make:mac-x64 make:mac-arm64"
+    "make:mac-x64": "electron-forge make --platform=darwin --arch=x64",
+    "make:mac-arm64": "electron-forge make --platform=darwin --arch=arm64",
+    "make:linux-x64": "electron-forge make --platform=linux --arch=x64",
+    "make:linux-arm64": "electron-forge make --platform=linux --arch=arm64",
+    "make:win": "npm-run-all make:win-x64 make:win-arm64",
+    "make:mac": "npm-run-all make:mac-x64 make:mac-arm64",
+    "make:linux": "npm-run-all make:linux-x64 make:linux-arm64",
+    "make:all": "npm-run-all make:win make:mac make:linux"
   },
   "repository": {
     "type": "git",
@@ -36,8 +41,10 @@
     "@electron-forge/maker-zip": "^7.6.1",
     "@electron-forge/plugin-auto-unpack-natives": "^7.6.1",
     "@electron-forge/plugin-fuses": "^7.6.1",
+    "@electron-forge/publisher-github": "^7.7.0",
     "@electron/fuses": "^1.8.0",
     "electron": "^34.0.2",
+    "electron-installer-dmg": "^4.0.0",
     "npm-run-all": "^4.1.5"
   },
   "dependencies": {
