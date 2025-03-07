@@ -11,6 +11,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
     getRssSources: () => ipcRenderer.invoke("get-rss-sources"),
     saveRssSources: (sources) =>
         ipcRenderer.invoke("save-rss-sources", sources),
+    addRssSource: (url) => ipcRenderer.invoke("add-rss-source", url),
     
     // Settings
     getSettings: () => ipcRenderer.invoke("get-settings"),

@@ -632,10 +632,10 @@ function applySettings() {
     appLanguageSelect.value = userSettings.language || "zh-CN";
 }
 
-const darkModeToggle = document.getElementById("dark-mode-toggle");
-const fontIncrease = document.getElementById("font-increase");
-const fontDecrease = document.getElementById("font-decrease");
-const saveApiSettingsBtn = document.getElementById("save-api-settings");
+darkModeToggle = document.getElementById("dark-mode-toggle");
+fontIncrease = document.getElementById("font-increase");
+fontDecrease = document.getElementById("font-decrease");
+saveApiSettingsBtn = document.getElementById("save-api-settings");
 
 darkModeToggle.addEventListener("click", async () => {
     userSettings.darkMode = !userSettings.darkMode;
@@ -987,3 +987,65 @@ document.getElementById('articles-back-button').addEventListener('click', () => 
 document.getElementById('content-back-button').addEventListener('click', () => {
     document.querySelector('[data-main-tab="articles-tab"]').click();
 });
+
+async function loadRssSources() {
+    console.log("加载RSS源列表...");
+    
+    // Ensure rssSourcesList is initialized
+    if (!rssSourcesList) {
+        rssSourcesList = document.getElementById("rss-sources");
+        if (!rssSourcesList) {
+            console.error("无法找到RSS源列表元素");
+            showNotification("无法找到RSS源列表元素", "error");
+            return [];
+        }
+    }
+    
+    // Show loading state directly in rssSourcesList
+    rssSourcesList.innerHTML = '<div class="loader"><span class="loading-indicator"></span> 加载订阅源...</div>';
+    
+    // Set a timeout promise in case getRssSources takes too long
+    const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => {
+            reject(new Error("加载RSS源超时，请检查网络连接"));
+        }, 15000);
+    });
+    
+    try {
+        console.log("调用IPC获取RSS源...");
+        // Retrieve RSS sources with timeout
+        const sources = await Promise.race([
+            window.electronAPI.getRssSources(),
+            timeoutPromise
+        ]);
+        console.log(`获取到${sources ? sources.length : 0}个RSS源`);
+        
+        if (!sources || !Array.isArray(sources)) {
+            throw new Error("获取到的RSS源格式无效");
+        }
+        
+        // Save to global and render list
+        currentFeeds = sources;
+        renderRssSources(sources);
+        
+        // If there are sources, optionally trigger default selection
+        if (sources.length > 0) {
+            const firstSource = document.querySelector(".source-item");
+            if (firstSource) {
+                firstSource.click();
+            }
+        }
+        
+        return sources;
+    } catch (error) {
+        console.error("加载RSS源失败:", error);
+        rssSourcesList.innerHTML = `
+            <div class="error-message">
+                加载RSS源失败: ${error.message}
+            </div>
+            <p class="empty-state">点击右上角+添加RSS源</p>
+        `;
+        showNotification("加载RSS源失败: " + error.message, "error");
+        return [];
+    }
+}
