@@ -54,9 +54,9 @@
             
             /* 中间栏 - 文章列表 */
             .articles-column {
-                width: 280px;
-                min-width: 280px;
-                max-width: 280px;
+                width: 450px;
+                min-width: 450px;
+                max-width: 450px;
                 border-right: 1px solid rgba(224, 224, 224, 0.5);
                 background: rgba(255, 255, 255, 0.3);
                 display: flex;
@@ -875,6 +875,29 @@
                 color: #333;
             }
             
+            /* 响应式设计 */
+            @media screen and (max-width: 1400px) {
+                .articles-column {
+                    width: 400px;
+                    min-width: 400px;
+                    max-width: 400px;
+                }
+            }
+            
+            @media screen and (max-width: 1100px) {
+                .articles-column {
+                    width: 380px;
+                    min-width: 380px;
+                    max-width: 380px;
+                }
+                
+                .sources-column {
+                    width: 250px;
+                    min-width: 250px;
+                    max-width: 250px;
+                }
+            }
+            
             /* 暗色模式适配 */
             :root.dark {
                 --bg-opacity: 0.7;
@@ -922,6 +945,36 @@
             
             :root.dark .ai-summary {
                 background: rgba(40, 42, 54, 0.7);
+            }
+            
+            /* article list specific styles to better fill the column */
+            .articles-column .column-content {
+                padding: 0;
+                overflow-y: auto;
+            }
+            
+            #articles-container {
+                width: 100%;
+            }
+            
+            .article-item {
+                padding: 16px 20px;
+                margin: 2px 0;
+                border-bottom: 1px solid rgba(230, 230, 230, 0.5);
+                transition: all 0.2s ease;
+            }
+            
+            .article-item:hover {
+                background: rgba(245, 247, 250, 0.7);
+                transform: translateY(-2px);
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+            }
+            
+            /* Adjust column width once more for good measure */
+            .articles-column {
+                width: 450px;
+                min-width: 450px;
+                max-width: 450px;
             }
         </style>
     </head>
