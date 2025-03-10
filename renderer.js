@@ -376,7 +376,44 @@ async function handleStreamSummary(articleContent) {
     
     window.electronAPI.onSummarizeStreamError((error) => {
         console.error("生成摘要失败:", error);
-        showNotification("生成摘要失败: " + error, "error");
+        
+        // 检查错误是否表明自定义接入点不支持流式API
+        if (error.includes("自定义接入点可能不支持流式API") || 
+            error.includes("流式API未返回任何内容") ||
+            error.includes("当前配置不正确")) {
+            
+            showNotification("流式API不受支持，正在尝试使用非流式模式...", "warning");
+            console.log("切换到非流式模式...");
+            
+            // 清理现有的摘要UI
+            if (summaryDiv) {
+                summaryDiv.remove();
+            }
+            
+            // 切换到非流式调用
+            handleNonStreamSummary(articleContent).catch(err => {
+                console.error("非流式调用也失败:", err);
+                showNotification("生成摘要失败: " + err, "error");
+            });
+        } else {
+            // 显示详细的错误信息
+            const errorMsg = "生成摘要失败: " + (error.includes("无法连接") ? "无法连接到AI服务，请检查网络和API配置" : error);
+            showNotification(errorMsg, "error");
+            
+            // 只保留核心错误信息在UI中显示
+            // 移除所有的技术详情以提高用户体验
+            const simplifiedError = error.split("。")[0]; // 只保留第一句
+            
+            // 在摘要区域显示错误
+            if (summaryDiv) {
+                const summaryText = summaryDiv.querySelector(".streaming-content");
+                if (summaryText) {
+                    summaryText.textContent = `错误: ${simplifiedError}`;
+                    summaryText.style.color = "#dc3545";
+                }
+            }
+        }
+        
         // 清理监听器
         window.electronAPI.removeAllListeners('summarize-stream-chunk');
         window.electronAPI.removeAllListeners('summarize-stream-end');
@@ -394,13 +431,13 @@ async function handleStreamSummary(articleContent) {
     }
     
     // 调用流式API
-    await window.electronAPI.summarizeArticleStream(
-        articleContent,
-        null, // 使用默认提供商
-        null, // 使用默认模型
-        null, // 使用默认摘要长度
-        targetLanguage
-    );
+    await window.electronAPI.summarizeArticleStream({
+        text: articleContent,
+        provider: null, // 使用默认提供商
+        model: null, // 使用默认模型
+        length: null, // 使用默认摘要长度
+        targetLanguage: targetLanguage
+    });
 }
 
 // 处理非流式摘要生成
@@ -496,13 +533,13 @@ async function handleQuickTranslate() {
             
             // 调用流式API - 使用翻译提示词
             const promptText = `请将以下内容翻译成${targetLanguage === 'zh-CN' ? '中文' : '英语'}，保持原文的格式和含义：\n\n${articleContent}`;
-            await window.electronAPI.summarizeArticleStream(
-                promptText,
-                null, // 使用默认提供商
-                null, // 使用默认模型
-                null, // 使用默认摘要长度
-                targetLanguage === 'zh-CN' ? '中文' : '英语'
-            );
+            await window.electronAPI.summarizeArticleStream({
+                text: promptText,
+                provider: null, // 使用默认提供商
+                model: null, // 使用默认模型
+                length: null, // 使用默认摘要长度
+                targetLanguage: targetLanguage === 'zh-CN' ? '中文' : '英语'
+            });
         } else {
             // 非流式翻译
             const prompt = `请将以下内容翻译成${targetLanguage === 'zh-CN' ? '中文' : '英语'}，保持原文的格式和含义：\n\n${articleContent}`;
@@ -808,13 +845,13 @@ quickTranslate.addEventListener('change', async () => {
             
             // 调用流式API - 使用翻译提示词
             const promptText = `请将以下内容翻译成${targetLanguage === 'zh-CN' ? '中文' : '英语'}，保持原文的格式和含义：\n\n${articleContent}`;
-            await window.electronAPI.summarizeArticleStream(
-                promptText,
-                null, // 使用默认提供商
-                null, // 使用默认模型
-                null, // 使用默认摘要长度
-                targetLanguage === 'zh-CN' ? '中文' : '英语'
-            );
+            await window.electronAPI.summarizeArticleStream({
+                text: promptText,
+                provider: null, // 使用默认提供商
+                model: null, // 使用默认模型
+                length: null, // 使用默认摘要长度
+                targetLanguage: targetLanguage === 'zh-CN' ? '中文' : '英语'
+            });
         } else {
             // 非流式翻译
             const prompt = `请将以下内容翻译成${targetLanguage === 'zh-CN' ? '中文' : '英语'}，保持原文的格式和含义：\n\n${articleContent}`;

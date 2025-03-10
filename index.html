@@ -1078,6 +1078,25 @@
                                     <option value="gpt-4">GPT-4</option>
                                     <option value="gpt-4-turbo">GPT-4 Turbo</option>
                                 </select>
+                                <p class="setting-description">预设模型选项</p>
+                            </div>
+                            <div class="setting-item">
+                                <label for="openai-custom-model">自定义模型名称 (可选)</label>
+                                <input type="text" id="openai-custom-model" placeholder="例如: gpt-4-turbo-preview">
+                                <p class="setting-description">如填写，将覆盖上方预设模型选项</p>
+                            </div>
+                            <div class="setting-item">
+                                <label class="toggle">
+                                    <span class="label-text">使用自定义接入点</span>
+                                    <input type="checkbox" id="openai-custom-endpoint-toggle">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                                <p class="setting-description">启用自定义API接入点</p>
+                            </div>
+                            <div class="setting-item custom-endpoint-container" id="openai-endpoint-container" style="display: none;">
+                                <label for="openai-endpoint">自定义接入点URL</label>
+                                <input type="text" id="openai-endpoint" placeholder="例如: https://api.example.com/v1">
+                                <p class="setting-description">如不确定，请保留默认值</p>
                             </div>
                         </div>
                     </div>
@@ -1104,6 +1123,25 @@
                                     <option value="deepseek-chat">DeepSeek Chat</option>
                                     <option value="deepseek-coder">DeepSeek Coder</option>
                                 </select>
+                                <p class="setting-description">预设模型选项</p>
+                            </div>
+                            <div class="setting-item">
+                                <label for="deepseek-custom-model">自定义模型名称 (可选)</label>
+                                <input type="text" id="deepseek-custom-model" placeholder="例如: deepseek-llm-67b-chat">
+                                <p class="setting-description">如填写，将覆盖上方预设模型选项</p>
+                            </div>
+                            <div class="setting-item">
+                                <label class="toggle">
+                                    <span class="label-text">使用自定义接入点</span>
+                                    <input type="checkbox" id="deepseek-custom-endpoint-toggle">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                                <p class="setting-description">启用自定义API接入点</p>
+                            </div>
+                            <div class="setting-item custom-endpoint-container" id="deepseek-endpoint-container" style="display: none;">
+                                <label for="deepseek-endpoint">自定义接入点URL</label>
+                                <input type="text" id="deepseek-endpoint" placeholder="例如: https://api.deepseek.com/v1">
+                                <p class="setting-description">如不确定，请保留默认值</p>
                             </div>
                         </div>
                     </div>
@@ -1131,6 +1169,25 @@
                                     <option value="claude-3-sonnet">Claude 3 Sonnet</option>
                                     <option value="claude-3-haiku">Claude 3 Haiku</option>
                                 </select>
+                                <p class="setting-description">预设模型选项</p>
+                            </div>
+                            <div class="setting-item">
+                                <label for="anthropic-custom-model">自定义模型名称 (可选)</label>
+                                <input type="text" id="anthropic-custom-model" placeholder="例如: claude-3-5-sonnet">
+                                <p class="setting-description">如填写，将覆盖上方预设模型选项</p>
+                            </div>
+                            <div class="setting-item">
+                                <label class="toggle">
+                                    <span class="label-text">使用自定义接入点</span>
+                                    <input type="checkbox" id="anthropic-custom-endpoint-toggle">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                                <p class="setting-description">启用自定义API接入点</p>
+                            </div>
+                            <div class="setting-item custom-endpoint-container" id="anthropic-endpoint-container" style="display: none;">
+                                <label for="anthropic-endpoint">自定义接入点URL</label>
+                                <input type="text" id="anthropic-endpoint" placeholder="例如: https://api.anthropic.com/v1">
+                                <p class="setting-description">如不确定，请保留默认值</p>
                             </div>
                         </div>
                     </div>

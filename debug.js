@@ -3,6 +3,24 @@
 // 默认语言设置
 let currentLanguage = 'zh-CN'; // 默认为中文
 
+// 全局设置变量
+let userSettings = {
+    darkMode: false,
+    fontScale: 1.0,
+    autoSummarize: false,
+    summaryLanguage: 'auto',
+    summaryLength: 'medium',
+    useStreamMode: true,
+    language: 'zh-CN'
+};
+
+let apiSettings = {
+    openai: { apiKey: "", model: "gpt-3.5-turbo" },
+    deepseek: { apiKey: "", model: "deepseek-chat" },
+    anthropic: { apiKey: "", model: "claude-3-haiku" },
+    activeApi: "openai"
+};
+
 // 本地化字符串
 const i18n = {
     'zh-CN': {
@@ -745,24 +763,8 @@ function initializeApp() {
         console.log("API检查通过: 所有必要的API方法都已定义");
         
         // 第3步: 初始化全局变量
-        window.userSettings = {
-            darkMode: false,
-            fontScale: 1.0,
-            autoSummarize: false,
-            summaryLanguage: 'auto',
-            summaryLength: 'medium',
-            useStreamMode: true,
-            language: 'zh-CN'
-        };
-        
-        window.apiSettings = {
-            activeProvider: "openai",
-            providers: {
-                openai: { apiKey: "", model: "gpt-3.5-turbo" },
-                anthropic: { apiKey: "", model: "claude-3-haiku" },
-                deepseek: { apiKey: "", model: "deepseek-chat" }
-            }
-        };
+        window.userSettings = userSettings;
+        window.apiSettings = apiSettings;
         
         window.currentFeeds = [];
         window.currentArticles = [];
@@ -912,8 +914,8 @@ async function generateSummary(article) {
     console.log("开始生成文章摘要...");
     
     // 检查是否有API密钥
-    const provider = apiSettings.activeProvider;
-    if (!provider || !apiSettings.providers[provider]) {
+    const provider = apiSettings.activeApi;
+    if (!provider || !apiSettings[provider]) {
         console.error("未选择API提供商或API设置不完整");
         
         // 显示带按钮的通知，让用户选择是否打开设置
@@ -931,7 +933,7 @@ async function generateSummary(article) {
         return;
     }
     
-    const apiKey = apiSettings.providers[provider].apiKey;
+    const apiKey = apiSettings[provider].apiKey;
     if (!apiKey) {
         console.error("缺少API密钥");
         
@@ -967,6 +969,12 @@ async function generateSummary(article) {
     // 创建摘要容器
     const summaryDiv = document.createElement("div");
     summaryDiv.className = "ai-summary";
+    summaryDiv.style.display = "block"; // 强制显示
+    summaryDiv.style.visibility = "visible"; // 强制可见性
+    summaryDiv.style.opacity = "1"; // 强制不透明
+    summaryDiv.style.height = "auto"; // 根据内容自动调整高度
+    summaryDiv.style.overflow = "visible"; // 确保内容溢出时可见
+
     summaryDiv.innerHTML = `
         <div class="ai-summary-header">
             <h4 class="ai-summary-title"><i class="fas fa-robot"></i> ${t('ai_summary')}</h4>
@@ -974,7 +982,7 @@ async function generateSummary(article) {
                 <span class="loading-indicator"></span> ${t('generating_summary')}
             </div>
         </div>
-        <div class="summary-text"></div>
+        <div class="summary-text" style="display:block; color:black; background-color:white; padding:10px; margin-top:10px; border:1px solid #ccc;"></div>
     `;
     
     // 添加到文章内容前面
@@ -1043,28 +1051,30 @@ async function translateArticle(article, targetLanguage) {
     console.log("开始翻译文章...");
     
     // 检查是否有API密钥
-    const provider = apiSettings.activeProvider;
-    if (!provider || !apiSettings.providers[provider]) {
+    const provider = apiSettings.activeApi;
+    if (!provider || !apiSettings[provider]) {
         console.error("未选择API提供商或API设置不完整");
-        showNotification("请先在AI设置中配置API", "error");
+        showNotification(t('missing_api_config'), "warning");
         
-        // 打开AI设置面板
-        const aiSettingsPanel = document.getElementById('ai-settings-panel');
-        if (aiSettingsPanel) {
-            aiSettingsPanel.classList.add("active");
+        if (confirm(t('open_ai_settings_prompt'))) {
+            const aiSettingsPanel = document.getElementById('ai-settings-panel');
+            if (aiSettingsPanel) {
+                aiSettingsPanel.classList.add("active");
+            }
         }
         return;
     }
     
-    const apiKey = apiSettings.providers[provider].apiKey;
+    const apiKey = apiSettings[provider].apiKey;
     if (!apiKey) {
         console.error("缺少API密钥");
-        showNotification("请先在AI设置中配置API密钥", "error");
+        showNotification(t('missing_api_key'), "warning");
         
-        // 打开AI设置面板
-        const aiSettingsPanel = document.getElementById('ai-settings-panel');
-        if (aiSettingsPanel) {
-            aiSettingsPanel.classList.add("active");
+        if (confirm(t('open_ai_settings_prompt'))) {
+            const aiSettingsPanel = document.getElementById('ai-settings-panel');
+            if (aiSettingsPanel) {
+                aiSettingsPanel.classList.add("active");
+            }
         }
         return;
     }
@@ -1141,8 +1151,8 @@ async function translateArticle(article, targetLanguage) {
 // 流式生成摘要 - 修改参数格式，并添加加载动画处理
 async function handleStreamingSummary(prompt, summaryDiv) {
     // 获取设置
-    const provider = apiSettings.activeProvider;
-    const model = apiSettings.providers[provider].model;
+    const provider = apiSettings.activeApi;
+    const model = apiSettings[provider].model || apiSettings[provider].customModel;
     const summaryLength = userSettings.summaryLength;
     const targetLanguage = userSettings.summaryLanguage;
     
@@ -1236,14 +1246,15 @@ async function handleStreamingSummary(prompt, summaryDiv) {
 // 非流式生成摘要 - 修改参数格式
 async function handleNormalSummary(prompt, summaryDiv) {
     // 获取设置
-    const provider = apiSettings.activeProvider;
-    const model = apiSettings.providers[provider].model;
+    const provider = apiSettings.activeApi;
+    const model = apiSettings[provider].customModel || apiSettings[provider].model;
     const summaryLength = userSettings.summaryLength;
     
     console.log("调用摘要API...");
     
     try {
         // 调用摘要API - 修改为使用对象参数，与IPC处理程序匹配
+        console.log("开始从IPC请求摘要...");
         const summary = await window.electronAPI.summarizeArticle({
             text: prompt,
             provider: provider,
@@ -1251,12 +1262,43 @@ async function handleNormalSummary(prompt, summaryDiv) {
             length: summaryLength
         });
         
+        console.log("摘要API返回内容：", summary);
+        console.log("摘要长度：", summary?.length || 0);
+        
+        // 检查摘要内容
+        if (!summary || summary.trim() === '') {
+            console.error("API返回了空摘要");
+            throw new Error("API返回了空摘要");
+        }
+        
+        // 查找和打印DOM元素状态
+        const loadingElement = summaryDiv.querySelector(".summary-loading");
+        const summaryTextElement = summaryDiv.querySelector(".summary-text");
+        
+        console.log("摘要容器元素:", summaryDiv);
+        console.log("加载指示器元素:", loadingElement);
+        console.log("摘要文本元素:", summaryTextElement);
+        
         // 更新界面
-        summaryDiv.querySelector(".summary-loading").remove();
-        summaryDiv.querySelector(".summary-text").textContent = summary;
+        if (loadingElement) {
+            console.log("移除加载指示器");
+            loadingElement.style.display = "none"; // 改为隐藏而不是移除，便于调试
+        }
+        
+        if (summaryTextElement) {
+            console.log("设置摘要文本内容");
+            summaryTextElement.textContent = summary;
+            
+            // 在设置后再次检查
+            console.log("设置后的摘要文本元素内容:", summaryTextElement.textContent);
+            console.log("摘要文本元素可见性:", summaryTextElement.offsetParent !== null);
+        } else {
+            console.error("找不到摘要文本元素");
+        }
         
         // 保存摘要到文章
         if (window.currentArticleData) {
+            console.log("保存摘要到文章数据");
             window.currentArticleData.summary = summary;
             updateArticleSummary(window.currentFeedUrl, window.currentArticleData);
         }
@@ -1271,8 +1313,8 @@ async function handleNormalSummary(prompt, summaryDiv) {
 // 流式翻译 - 修改参数格式，并添加加载动画处理
 async function handleStreamingTranslation(prompt, translationDiv, targetLanguage) {
     // 获取设置
-    const provider = apiSettings.activeProvider;
-    const model = apiSettings.providers[provider].model;
+    const provider = apiSettings.activeApi;
+    const model = apiSettings[provider].customModel || apiSettings[provider].model;
     
     // 准备显示流式内容的容器
     const loadingElement = translationDiv.querySelector(".summary-loading");
@@ -1306,57 +1348,39 @@ async function handleStreamingTranslation(prompt, translationDiv, targetLanguage
         // 流式输出完成
         translationText.classList.remove("streaming-content");
         
-        // 清理事件监听器
-        window.electronAPI.removeAllListeners("summarize-stream-chunk");
-        window.electronAPI.removeAllListeners("summarize-stream-end");
-        window.electronAPI.removeAllListeners("summarize-stream-error");
-        
         showNotification("翻译完成");
     });
     
-    window.electronAPI.onSummarizeStreamError((error) => {
-        console.error("流式翻译失败:", error);
-        
-        // 确保加载动画移除
-        if (loadingElement) {
-            loadingElement.style.display = "none";
-        }
-        
-        translationText.textContent = "翻译失败: " + error;
-        translationText.classList.remove("streaming-content");
-        
-        // 清理事件监听器
-        window.electronAPI.removeAllListeners("summarize-stream-chunk");
-        window.electronAPI.removeAllListeners("summarize-stream-end");
-        window.electronAPI.removeAllListeners("summarize-stream-error");
-    });
-    
-    // 调用流式API - 修改为使用对象参数，与IPC处理程序匹配
     try {
-        await window.electronAPI.summarizeArticleStream({
+        // 调用流式API
+        await window.electronAPI.streamSummarize({
             text: prompt,
             provider: provider,
             model: model,
-            length: "long",
             targetLanguage: targetLanguage
         });
     } catch (error) {
-        console.error("流式翻译API调用失败:", error);
+        console.error("流式API调用失败:", error);
         
-        // 确保加载动画移除
+        // 移除加载动画
         if (loadingElement) {
             loadingElement.style.display = "none";
         }
         
-        throw new Error("无法连接到翻译服务: " + error.message);
+        // 显示错误
+        translationText.classList.remove("streaming-content");
+        translationText.textContent = "翻译失败: " + error.message;
+        translationText.style.color = "red";
+        
+        showNotification("翻译失败: " + error.message, "error");
     }
 }
 
 // 非流式翻译 - 修改参数格式
 async function handleNormalTranslation(prompt, translationDiv, targetLanguage) {
     // 获取设置
-    const provider = apiSettings.activeProvider;
-    const model = apiSettings.providers[provider].model;
+    const provider = apiSettings.activeApi;
+    const model = apiSettings[provider].customModel || apiSettings[provider].model;
     
     // 调用API - 修改为使用对象参数，与IPC处理程序匹配
     const translation = await window.electronAPI.summarizeArticle({
@@ -1376,7 +1400,30 @@ async function handleNormalTranslation(prompt, translationDiv, targetLanguage) {
 // 更新文章摘要到缓存 - 修复参数格式
 async function updateArticleSummary(feedUrl, article) {
     try {
-        console.log("更新文章摘要到缓存:", article.title);
+        if (!feedUrl) {
+            console.error("更新摘要失败: 未提供Feed URL");
+            showNotification("保存摘要失败: 未知RSS源", "error");
+            return;
+        }
+        
+        if (!window.currentArticleIndex && window.currentArticleIndex !== 0) {
+            console.error("更新摘要失败: 未知文章索引");
+            showNotification("保存摘要失败: 未知文章索引", "error");
+            return;
+        }
+        
+        if (!article || !article.summary) {
+            console.error("更新摘要失败: 文章或摘要为空");
+            showNotification("保存摘要失败: 摘要内容为空", "error");
+            return;
+        }
+        
+        console.log("更新文章摘要到缓存:", article.title || "未知标题");
+        console.log("摘要参数:", {
+            feedUrl,
+            articleIndex: window.currentArticleIndex,
+            summaryLength: article.summary.length
+        });
         
         // 修改为与IPC处理程序匹配的参数格式
         await window.electronAPI.summarizeAndUpdateArticle({
@@ -1386,6 +1433,7 @@ async function updateArticleSummary(feedUrl, article) {
         });
         
         console.log("文章摘要已保存到缓存");
+        showNotification("摘要已保存", "success");
     } catch (error) {
         console.error("更新文章摘要失败:", error);
         showNotification("保存摘要失败，但已显示在页面上", "warning");
@@ -1492,11 +1540,42 @@ async function loadApiSettings() {
 // 保存API设置
 async function saveApiSettings() {
     try {
-        await window.electronAPI.saveApiSettings(apiSettings);
-        console.log("保存API设置");
+        // 从UI中收集API设置
+        apiSettings.openai = {
+            apiKey: document.getElementById('openai-api-key').value,
+            model: document.getElementById('openai-model').value,
+            customModel: document.getElementById('openai-custom-model').value,
+            useCustomEndpoint: document.getElementById('openai-custom-endpoint-toggle').checked,
+            endpoint: document.getElementById('openai-endpoint').value
+        };
+        
+        apiSettings.deepseek = {
+            apiKey: document.getElementById('deepseek-api-key').value,
+            model: document.getElementById('deepseek-model').value,
+            customModel: document.getElementById('deepseek-custom-model').value,
+            useCustomEndpoint: document.getElementById('deepseek-custom-endpoint-toggle').checked,
+            endpoint: document.getElementById('deepseek-endpoint').value
+        };
+        
+        apiSettings.anthropic = {
+            apiKey: document.getElementById('anthropic-api-key').value,
+            model: document.getElementById('anthropic-model').value,
+            customModel: document.getElementById('anthropic-custom-model').value,
+            useCustomEndpoint: document.getElementById('anthropic-custom-endpoint-toggle').checked,
+            endpoint: document.getElementById('anthropic-endpoint').value
+        };
+        
+        const result = await window.electronAPI.saveApiSettings(apiSettings);
+        
+        if (result) {
+            showNotification('API设置已保存');
+            await loadApiSettings(); // 重新加载最新设置
+        } else {
+            showNotification('保存API设置失败', 'error');
+        }
     } catch (error) {
-        console.error("保存API设置失败:", error);
-        showNotification("保存API设置失败", "error");
+        console.error('保存API设置时出错:', error);
+        showNotification('保存API设置时出错', 'error');
     }
 }
 
@@ -2243,35 +2322,13 @@ function initAISettingsPanel() {
     // 获取UI元素
     const aiSettingsPanel = document.getElementById('ai-settings-panel');
     const aiSettingsToggle = document.getElementById('ai-settings-toggle');
-    const closeSettingsBtn = document.getElementById('close-settings');
-    
-    // 获取表单元素
-    const autoSummarizeToggle = document.getElementById('auto-summarize');
-    const streamModeToggle = document.getElementById('stream-mode');
-    const summaryLanguageSelect = document.getElementById('summary-language');
-    const summaryLengthSelect = document.getElementById('summary-length');
-    const saveApiSettingsBtn = document.getElementById('save-api-settings');
-    
-    // 收集API相关元素
-    const apiRadios = document.querySelectorAll('input[name="active-api"]');
-    const apiKeyInputs = {
-        openai: document.getElementById('openai-api-key'),
-        deepseek: document.getElementById('deepseek-api-key'),
-        anthropic: document.getElementById('anthropic-api-key')
-    };
-    const modelSelects = {
-        openai: document.getElementById('openai-model'),
-        deepseek: document.getElementById('deepseek-model'),
-        anthropic: document.getElementById('anthropic-model')
-    };
+    const closeSettings = document.getElementById('close-settings');
     
     // 确保关键元素存在
-    if (!aiSettingsPanel || !aiSettingsToggle || !autoSummarizeToggle || !streamModeToggle || !summaryLanguageSelect || !summaryLengthSelect || !saveApiSettingsBtn || !apiRadios || !apiKeyInputs || !modelSelects) {
-        console.error("无法找到AI设置面板或切换按钮，或表单元素，或API相关元素");
+    if (!aiSettingsPanel || !aiSettingsToggle) {
+        console.error("无法找到AI设置面板或切换按钮");
         return;
     }
-    
-    console.log("AI设置面板元素已获取");
     
     // 移除所有现有事件，避免重复绑定
     const newAiSettingsToggle = aiSettingsToggle.cloneNode(true);
@@ -2280,146 +2337,96 @@ function initAISettingsPanel() {
     // 更新全局引用
     window.aiSettingsToggleRef = newAiSettingsToggle;
     
-    // 切换设置面板显示/隐藏
-    newAiSettingsToggle.addEventListener("click", function(e) {
+    // 打开AI设置面板
+    newAiSettingsToggle.addEventListener('click', function(e) {
         e.stopPropagation(); // 阻止事件冒泡
-        console.log("切换AI设置面板");
+        console.log("打开AI设置面板");
         
         // 关闭其他面板
         document.getElementById('app-settings-panel')?.classList.remove('active');
         
         // 切换当前面板
-        aiSettingsPanel.classList.toggle("active");
-        
-        // 初始化表单值
-        if (aiSettingsPanel.classList.contains("active")) {
-            console.log("正在初始化AI设置表单");
-            
-            // 应用当前设置到表单
-            if (autoSummarizeToggle) {
-                autoSummarizeToggle.checked = userSettings.autoSummarize || false;
-            }
-            
-            if (streamModeToggle) {
-                streamModeToggle.checked = userSettings.useStreamMode || true;
-            }
-            
-            if (summaryLanguageSelect && userSettings.summaryLanguage) {
-                summaryLanguageSelect.value = userSettings.summaryLanguage;
-            }
-            
-            if (summaryLengthSelect && userSettings.summaryLength) {
-                summaryLengthSelect.value = userSettings.summaryLength;
-            }
-            
-            // 设置API选择
-            const activeProvider = apiSettings.activeProvider;
-            if (activeProvider) {
-                const activeRadio = document.querySelector(`input[name="active-api"][value="${activeProvider}"]`);
-                if (activeRadio) {
-                    activeRadio.checked = true;
-                }
-            }
-            
-            // 设置API密钥和模型
-            Object.keys(apiSettings.providers).forEach(provider => {
-                if (apiKeyInputs[provider]) {
-                    apiKeyInputs[provider].value = apiSettings.providers[provider].apiKey || '';
-                }
-                
-                if (modelSelects[provider]) {
-                    modelSelects[provider].value = apiSettings.providers[provider].model || '';
-                }
-            });
-        }
+        aiSettingsPanel.classList.toggle('active');
     });
     
     // 关闭设置面板
-    if (closeSettingsBtn) {
-        closeSettingsBtn.addEventListener("click", function(e) {
-            e.stopPropagation(); // 阻止事件冒泡
-            aiSettingsPanel.classList.remove("active");
+    if (closeSettings) {
+        closeSettings.addEventListener('click', function() {
+            aiSettingsPanel.classList.remove('active');
         });
     }
     
     // 点击外部关闭设置面板
-    document.addEventListener("mousedown", function(e) {
-        if (aiSettingsPanel.classList.contains("active") && 
+    document.addEventListener('mousedown', function(e) {
+        if (aiSettingsPanel.classList.contains('active') && 
             !aiSettingsPanel.contains(e.target) && 
-            e.target !== aiSettingsToggle) {
-            aiSettingsPanel.classList.remove("active");
+            e.target !== newAiSettingsToggle) {
+            aiSettingsPanel.classList.remove('active');
         }
     });
     
-    // 监听设置变更
-    if (autoSummarizeToggle) {
-        autoSummarizeToggle.addEventListener("change", function() {
-            userSettings.autoSummarize = this.checked;
-            saveSettings();
-            console.log("自动摘要设置已更改:", this.checked);
-        });
-    }
+    // API提供商选择
+    const activeApi = apiSettings.activeApi || 'openai';
+    const apiRadios = document.querySelectorAll('input[name="active-api"]');
     
-    if (streamModeToggle) {
-        streamModeToggle.addEventListener("change", function() {
-            userSettings.useStreamMode = this.checked;
-            saveSettings();
-            console.log("流式输出设置已更改:", this.checked);
-        });
-    }
-    
-    if (summaryLanguageSelect) {
-        summaryLanguageSelect.addEventListener("change", function() {
-            userSettings.summaryLanguage = this.value;
-            saveSettings();
-            console.log("摘要语言设置已更改:", this.value);
-        });
-    }
-    
-    if (summaryLengthSelect) {
-        summaryLengthSelect.addEventListener("change", function() {
-            userSettings.summaryLength = this.value;
-            saveSettings();
-            console.log("摘要长度设置已更改:", this.value);
-        });
-    }
-    
-    // 选择活跃的API提供商
     apiRadios.forEach(radio => {
-        radio.addEventListener("change", function() {
-            if (this.checked) {
-                apiSettings.activeProvider = this.value;
-                console.log("当前API提供商已更改:", this.value);
+        if (radio.value === activeApi) {
+            radio.checked = true;
+        }
+        
+        radio.addEventListener('change', () => {
+            if (radio.checked) {
+                apiSettings.activeApi = radio.value;
+                saveApiSettings();
             }
         });
     });
     
-    // 保存API设置
-    if (saveApiSettingsBtn) {
-        saveApiSettingsBtn.addEventListener("click", function() {
-            // 收集所有API提供商的设置
-            Object.keys(apiSettings.providers).forEach(provider => {
-                if (apiKeyInputs[provider]) {
-                    apiSettings.providers[provider].apiKey = apiKeyInputs[provider].value;
-                }
-                
-                if (modelSelects[provider]) {
-                    apiSettings.providers[provider].model = modelSelects[provider].value;
-                }
-            });
-            
-            // 保存设置
-            saveApiSettings().then(() => {
-                // 关闭面板并显示通知
-                aiSettingsPanel.classList.remove("active");
-                showNotification("AI设置已保存");
-                console.log("AI设置已保存:", apiSettings);
-            }).catch(error => {
-                console.error("保存API设置失败:", error);
-                showNotification("保存API设置失败", "error");
-            });
-        });
+    // 初始化 API Keys
+    document.getElementById('openai-api-key').value = apiSettings.openai?.apiKey || '';
+    document.getElementById('deepseek-api-key').value = apiSettings.deepseek?.apiKey || '';
+    document.getElementById('anthropic-api-key').value = apiSettings.anthropic?.apiKey || '';
+    
+    // 初始化模型选择
+    if (apiSettings.openai?.model) {
+        document.getElementById('openai-model').value = apiSettings.openai.model;
     }
+    if (apiSettings.deepseek?.model) {
+        document.getElementById('deepseek-model').value = apiSettings.deepseek.model;
+    }
+    if (apiSettings.anthropic?.model) {
+        document.getElementById('anthropic-model').value = apiSettings.anthropic.model;
+    }
+    
+    // 初始化自定义模型
+    document.getElementById('openai-custom-model').value = apiSettings.openai?.customModel || '';
+    document.getElementById('deepseek-custom-model').value = apiSettings.deepseek?.customModel || '';
+    document.getElementById('anthropic-custom-model').value = apiSettings.anthropic?.customModel || '';
+    
+    // 初始化自定义接入点开关和字段
+    setupCustomEndpoint('openai', apiSettings.openai?.useCustomEndpoint || false, apiSettings.openai?.endpoint || '');
+    setupCustomEndpoint('deepseek', apiSettings.deepseek?.useCustomEndpoint || false, apiSettings.deepseek?.endpoint || '');
+    setupCustomEndpoint('anthropic', apiSettings.anthropic?.useCustomEndpoint || false, apiSettings.anthropic?.endpoint || '');
+    
+    // 设置保存按钮
+    document.getElementById('save-api-settings').addEventListener('click', saveApiSettings);
+    
+    console.log("AI设置面板初始化完成");
+}
+
+// 设置自定义接入点UI和事件监听
+function setupCustomEndpoint(provider, useCustom, endpoint) {
+    const toggle = document.getElementById(`${provider}-custom-endpoint-toggle`);
+    const container = document.getElementById(`${provider}-endpoint-container`);
+    const input = document.getElementById(`${provider}-endpoint`);
+    
+    toggle.checked = useCustom;
+    input.value = endpoint;
+    container.style.display = useCustom ? 'block' : 'none';
+    
+    toggle.addEventListener('change', () => {
+        container.style.display = toggle.checked ? 'block' : 'none';
+    });
 }
 
 // 初始化应用设置面板

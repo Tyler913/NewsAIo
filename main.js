@@ -4,6 +4,8 @@ const path = require("path");
 const crypto = require("crypto");
 const axios = require("axios");
 const RssParser = require('rss-parser');
+const { OpenAI } = require("openai");
+const Anthropic = require("@anthropic-ai/sdk");
 
 // 设置全局编码
 process.env.LANG = 'zh-CN.UTF-8';
@@ -159,15 +161,40 @@ ipcMain.handle("summarize-article", async (event, { text, provider, model, lengt
     try {
         // 获取API设置
         const apiSettings = JSON.parse(fs.readFileSync(API_SETTINGS_FILE, "utf-8"));
+        console.log("加载的API设置:", JSON.stringify(apiSettings, null, 2));
         
         // 如果未提供参数，使用默认设置
-        provider = provider || apiSettings.activeProvider;
-        model = model || apiSettings.providers[provider].model;
-        length = length || apiSettings.summaryLength;
+        provider = provider || apiSettings.activeApi;
+        console.log("使用的API提供商:", provider);
         
-        const apiKey = apiSettings.providers[provider].apiKey;
+        if (!apiSettings[provider]) {
+            console.error(`未找到${provider}的配置`);
+            throw new Error(`未找到${provider}的配置`);
+        }
+        
+        // 使用自定义模型（如果有）或默认模型
+        const customModel = apiSettings[provider].customModel;
+        const defaultModel = apiSettings[provider].model;
+        model = model || customModel || defaultModel;
+        console.log(`使用的模型: ${model} (${customModel ? '自定义模型' : '默认模型'})`);
+        
+        // 检查是否使用自定义接入点
+        const useCustomEndpoint = apiSettings[provider].useCustomEndpoint;
+        const endpoint = apiSettings[provider].endpoint;
+        if (useCustomEndpoint && endpoint) {
+            console.log(`使用自定义接入点: ${endpoint}`);
+        } else {
+            console.log("使用默认接入点");
+        }
+        
+        length = length || apiSettings.summaryLength || "medium";
+        
+        const apiKey = apiSettings[provider].apiKey;
         if (!apiKey) {
+            console.error(`未配置${provider}的API密钥`);
             throw new Error(`未配置${provider}的API密钥`);
+        } else {
+            console.log(`已配置${provider}的API密钥: ${apiKey.substring(0, 3)}...${apiKey.substring(apiKey.length - 3)}`);
         }
         
         // 根据长度定义提示词
@@ -188,6 +215,7 @@ ipcMain.handle("summarize-article", async (event, { text, provider, model, lengt
         const prompt = `用${promptLength}总结以下文章。请专注于主要观点和核心见解：\n\n${text}`;
         
         // 根据提供商选择相应的API调用方法
+        console.log(`开始调用${provider} API生成摘要...`);
         let summary;
         switch (provider) {
             case "openai":
@@ -213,19 +241,42 @@ ipcMain.handle("summarize-article", async (event, { text, provider, model, lengt
 // AI批量总结
 ipcMain.handle("batch-summarize-articles", async (event, { articles, provider, model, length }) => {
     try {
-        // 获取API设置，如果未提供参数
-        if (!provider || !model || !length) {
-            const apiSettings = JSON.parse(fs.readFileSync(API_SETTINGS_FILE, "utf-8"));
-            provider = provider || apiSettings.activeProvider;
-            model = model || apiSettings.providers[provider].model;
-            length = length || apiSettings.summaryLength;
+        // 获取API设置
+        const apiSettings = JSON.parse(fs.readFileSync(API_SETTINGS_FILE, "utf-8"));
+        console.log("批量摘要 - 加载的API设置:", JSON.stringify(apiSettings, null, 2));
+        
+        // 如果未提供参数，使用默认设置
+        provider = provider || apiSettings.activeApi;
+        console.log("批量摘要 - 使用的API提供商:", provider);
+        
+        if (!apiSettings[provider]) {
+            console.error(`批量摘要 - 未找到${provider}的配置`);
+            throw new Error(`未找到${provider}的配置`);
         }
         
-        const apiSettings = JSON.parse(fs.readFileSync(API_SETTINGS_FILE, "utf-8"));
-        const apiKey = apiSettings.providers[provider].apiKey;
+        // 使用自定义模型（如果有）或默认模型
+        const customModel = apiSettings[provider].customModel;
+        const defaultModel = apiSettings[provider].model;
+        model = model || customModel || defaultModel;
+        console.log(`批量摘要 - 使用的模型: ${model} (${customModel ? '自定义模型' : '默认模型'})`);
         
+        // 检查是否使用自定义接入点
+        const useCustomEndpoint = apiSettings[provider].useCustomEndpoint;
+        const endpoint = apiSettings[provider].endpoint;
+        if (useCustomEndpoint && endpoint) {
+            console.log(`批量摘要 - 使用自定义接入点: ${endpoint}`);
+        } else {
+            console.log("批量摘要 - 使用默认接入点");
+        }
+        
+        length = length || apiSettings.summaryLength || "medium";
+        
+        const apiKey = apiSettings[provider].apiKey;
         if (!apiKey) {
+            console.error(`批量摘要 - 未配置${provider}的API密钥`);
             throw new Error(`未配置${provider}的API密钥`);
+        } else {
+            console.log(`批量摘要 - 已配置${provider}的API密钥: ${apiKey.substring(0, 3)}...${apiKey.substring(apiKey.length - 3)}`);
         }
         
         const results = [];
@@ -288,38 +339,134 @@ ipcMain.handle("batch-summarize-articles", async (event, { articles, provider, m
     }
 });
 
-// 手动总结单篇文章并更新缓存
-ipcMain.handle("summarize-and-update-article", async (event, { url, articleIndex, articleContent }) => {
+// 同时摘要并更新文章 - 修改为解构参数
+ipcMain.handle("summarize-and-update-article", async (event, params) => {
     try {
-        const hash = crypto.createHash("md5").update(url).digest("hex");
-        const cachePath = path.join(CACHE_DIR, `${hash}.json`);
-        
-        if (!fs.existsSync(cachePath)) {
-            throw new Error("找不到RSS源缓存");
+        // 检查参数格式
+        if (!params) {
+            console.error("未提供参数对象");
+            throw new Error("缺少参数对象");
         }
         
-        // 读取缓存
-        const rawData = fs.readFileSync(cachePath, "utf-8");
-        const cachedData = JSON.parse(rawData);
-        const feed = cachedData.feed;
+        // 解构参数
+        const { url, articleIndex, articleContent } = params;
         
-        if (!feed || !feed.items || articleIndex >= feed.items.length) {
-            throw new Error("文章索引无效或缓存数据损坏");
+        // 检查必要参数
+        if (!url || articleIndex === undefined) {
+            console.error("缺少必要参数", { url, articleIndex });
+            throw new Error("缺少必要参数：URL或文章索引");
+        }
+        
+        console.log("摘要更新请求参数:", { 
+            url, 
+            articleIndex, 
+            contentLength: articleContent ? articleContent.length : 0 
+        });
+        
+        // 从RSS缓存中获取Feed数据
+        let feed;
+        let cacheData;
+        let originalStructure;
+        
+        try {
+            const cacheFilePath = path.join(CACHE_DIR, `${crypto.createHash('md5').update(url).digest('hex')}.json`);
+            console.log("尝试读取缓存文件:", cacheFilePath);
+            
+            if (!fs.existsSync(cacheFilePath)) {
+                console.error("缓存文件不存在:", cacheFilePath);
+                throw new Error("找不到RSS源缓存文件");
+            }
+            
+            cacheData = fs.readFileSync(cacheFilePath, "utf-8");
+            const parsedData = JSON.parse(cacheData);
+            originalStructure = parsedData;
+            
+            // 确定数据结构 - 有些缓存是 {feed: {...}} 格式，有些直接是 feed 对象
+            if (parsedData.feed) {
+                feed = parsedData.feed;
+                console.log("缓存使用嵌套结构 {feed: {...}}");
+            } else {
+                feed = parsedData;
+                console.log("缓存使用直接结构");
+            }
+            
+            console.log("成功读取缓存数据, 文章数量:", feed.items ? feed.items.length : 0);
+        } catch (error) {
+            console.error("读取RSS缓存失败:", error);
+            throw new Error(`无法读取RSS缓存: ${error.message}`);
+        }
+        
+        // 检查文章索引是否有效
+        if (!feed.items || articleIndex >= feed.items.length) {
+            console.error("无效的文章索引:", articleIndex, "文章总数:", feed.items ? feed.items.length : 0);
+            throw new Error("无效的文章索引");
+        }
+        
+        // 如果是保存现有摘要，直接更新不调用API
+        if (articleContent) {
+            console.log("直接更新现有摘要，跳过API调用");
+            feed.items[articleIndex].summary = articleContent;
+            
+            // 保存回缓存
+            try {
+                const cacheFilePath = path.join(CACHE_DIR, `${crypto.createHash('md5').update(url).digest('hex')}.json`);
+                
+                // 确保保持原有的数据结构
+                let dataToSave;
+                if (originalStructure && originalStructure.feed) {
+                    dataToSave = { 
+                        ...originalStructure, 
+                        feed: feed 
+                    };
+                } else {
+                    dataToSave = feed;
+                }
+                
+                fs.writeFileSync(cacheFilePath, JSON.stringify(dataToSave), "utf-8");
+                console.log("已更新摘要到缓存文件");
+                return articleContent; // 直接返回输入的摘要
+            } catch (error) {
+                console.error("保存缓存失败:", error);
+                throw new Error(`无法保存缓存: ${error.message}`);
+            }
         }
         
         // 获取API设置
         const apiSettings = JSON.parse(fs.readFileSync(API_SETTINGS_FILE, "utf-8"));
-        const provider = apiSettings.activeProvider;
-        const model = apiSettings.providers[provider].model;
-        const length = apiSettings.summaryLength;
-        const apiKey = apiSettings.providers[provider].apiKey;
+        console.log("加载的API设置:", JSON.stringify(apiSettings, null, 2));
         
+        // 使用activeApi字段选择提供商
+        const provider = apiSettings.activeApi;
+        console.log("使用的API提供商:", provider);
+        
+        if (!apiSettings[provider]) {
+            throw new Error(`未找到${provider}的配置`);
+        }
+        
+        // 获取API密钥
+        const apiKey = apiSettings[provider].apiKey;
         if (!apiKey) {
             throw new Error(`未配置${provider}的API密钥`);
+        } else {
+            console.log(`已配置${provider}的API密钥: ${apiKey.substring(0, 3)}...${apiKey.substring(apiKey.length - 3)}`);
+        }
+        
+        // 使用自定义模型（如果有）或默认模型
+        const customModel = apiSettings[provider].customModel;
+        const defaultModel = apiSettings[provider].model;
+        const model = customModel || defaultModel;
+        console.log(`使用的模型: ${model} ${customModel ? '(自定义模型)' : ''}`);
+        
+        // 检查是否使用自定义接入点
+        const useCustomEndpoint = apiSettings[provider].useCustomEndpoint;
+        const endpoint = apiSettings[provider].endpoint;
+        if (useCustomEndpoint && endpoint) {
+            console.log(`使用自定义接入点: ${endpoint}`);
         }
         
         // 根据长度定义提示词
         let promptLength;
+        const length = apiSettings.summaryLength || "medium";
         switch (length) {
             case "short":
                 promptLength = "2-3句话";
@@ -336,6 +483,7 @@ ipcMain.handle("summarize-and-update-article", async (event, { url, articleIndex
         const prompt = `用${promptLength}总结以下文章。请专注于主要观点和核心见解：\n\n${articleContent}`;
         
         // 根据提供商选择相应的API调用方法
+        console.log(`开始调用${provider} API生成摘要...`);
         let summary;
         switch (provider) {
             case "openai":
@@ -351,13 +499,24 @@ ipcMain.handle("summarize-and-update-article", async (event, { url, articleIndex
                 throw new Error(`不支持的提供商 ${provider}`);
         }
         
+        console.log("API返回摘要内容:", summary);
+        console.log("摘要内容长度:", summary?.length || 0);
+        
         // 更新缓存中的摘要
         feed.items[articleIndex].summary = summary;
         
         // 保存回缓存
-        cachedData.feed = feed;
-        fs.writeFileSync(cachePath, JSON.stringify(cachedData), "utf-8");
+        try {
+            const cacheFilePath = path.join(CACHE_DIR, `${crypto.createHash('md5').update(url).digest('hex')}.json`);
+            fs.writeFileSync(cacheFilePath, JSON.stringify(feed), "utf-8");
+            console.log("已更新摘要到缓存文件");
+        } catch (error) {
+            console.error("保存缓存失败:", error);
+            throw new Error(`无法保存缓存: ${error.message}`);
+        }
         
+        // 返回更新后的摘要给渲染进程
+        console.log("成功生成并保存摘要，返回给渲染进程");
         return summary;
     } catch (error) {
         console.error("总结并更新文章失败:", error);
@@ -368,82 +527,261 @@ ipcMain.handle("summarize-and-update-article", async (event, { url, articleIndex
 // API提供商实现
 async function callOpenAI(apiKey, model, prompt) {
     try {
-        const response = await axios({
-            method: 'post',
-            url: 'https://api.openai.com/v1/chat/completions',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${apiKey}`
-            },
-            data: {
-                model: model,
+        // 从API设置中获取自定义值
+        const apiSettings = JSON.parse(fs.readFileSync(API_SETTINGS_FILE, "utf-8"));
+        const useCustomEndpoint = apiSettings.openai?.useCustomEndpoint || false;
+        const customEndpoint = apiSettings.openai?.endpoint || '';
+        const customModel = apiSettings.openai?.customModel || '';
+        
+        // 使用自定义模型（如果有）
+        const modelToUse = customModel || model;
+        
+        // 使用自定义接入点或默认接入点
+        const apiEndpoint = useCustomEndpoint && customEndpoint 
+            ? customEndpoint 
+            : 'https://api.openai.com';
+            
+        console.log(`非流式API接入点原始URL: ${apiEndpoint}`);
+        
+        // 确保URL格式正确
+        let baseURL = apiEndpoint;
+        
+        // 如果URL不包含协议，添加https://
+        if (!baseURL.startsWith('http://') && !baseURL.startsWith('https://')) {
+            baseURL = 'https://' + baseURL;
+            console.log(`添加https协议: ${baseURL}`);
+        }
+        
+        // 确保不以/v1结尾
+        if (baseURL.endsWith('/v1')) {
+            baseURL = baseURL.slice(0, -3);
+            console.log(`删除尾部/v1: ${baseURL}`);
+        }
+        
+        // 去除尾部斜杠
+        if (baseURL.endsWith('/')) {
+            baseURL = baseURL.slice(0, -1);
+            console.log(`删除尾部斜杠: ${baseURL}`);
+        }
+        
+        console.log(`处理后的基础URL: ${baseURL}`);
+        
+        // 检查是否需要添加 /v1 路径
+        // 对于自定义接入点，我们不自动添加 /v1，而是依赖用户提供完整的正确路径
+        let apiPath = '';
+        if (!useCustomEndpoint) {
+            apiPath = '/v1'; // 只有官方API才自动添加/v1路径
+        }
+        
+        console.log(`使用模型: ${modelToUse}`);
+        console.log(`使用的API路径: ${baseURL}${apiPath}`);
+        
+        try {
+            // 创建OpenAI客户端
+            const client = new OpenAI({
+                apiKey: apiKey,
+                baseURL: baseURL + apiPath,
+                timeout: 30000
+            });
+            
+            console.log("创建OpenAI非流式请求...");
+            
+            const response = await client.chat.completions.create({
+                model: modelToUse,
                 messages: [
-                    { role: "system", content: "你是一个有用的助手，能够简洁准确地总结文章。" },
+                    { role: "system", content: "你是一个AI助手，请简明扼要地总结文章要点，不要添加额外解释。" },
                     { role: "user", content: prompt }
                 ],
-                max_tokens: 500,
-                temperature: 0.3
+                temperature: 0.3,
+                max_tokens: 1000,
+            });
+            
+            console.log("收到OpenAI响应");
+            
+            if (response.choices && response.choices.length > 0) {
+                const content = response.choices[0].message.content.trim();
+                console.log("返回的摘要内容:", content.substring(0, 100) + "...");
+                return content;
+            } else {
+                console.error("无法从OpenAI响应中提取内容:", JSON.stringify(response));
+                throw new Error("API响应格式不符合预期，无法提取内容");
             }
-        });
-        
-        return response.data.choices[0].message.content.trim();
+        } catch (apiError) {
+            console.error("OpenAI API调用错误:", apiError);
+            
+            // 检查是否是网络错误
+            if (apiError.code === 'ENOTFOUND' || apiError.code === 'ECONNREFUSED') {
+                throw new Error(`无法连接到API服务器 ${baseURL}: ${apiError.message}`);
+            }
+            
+            // 检查是否是验证错误
+            if (apiError.status === 401) {
+                throw new Error("API密钥无效");
+            }
+            
+            // 检查是否是URL错误
+            if (apiError.status === 404) {
+                throw new Error(`API接入点URL无效: ${baseURL}`);
+            }
+            
+            throw new Error(`OpenAI API调用错误: ${apiError.message}`);
+        }
     } catch (error) {
-        console.error("OpenAI API错误:", error.response?.data || error.message);
-        throw new Error(`OpenAI API错误: ${error.response?.data?.error?.message || error.message}`);
+        console.error("OpenAI API调用失败:", error);
+        throw new Error(`OpenAI API调用失败: ${error.message}`);
     }
 }
 
 async function callDeepSeek(apiKey, model, prompt) {
     try {
-        const response = await axios({
-            method: 'post',
-            url: 'https://api.deepseek.com/v1/chat/completions',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${apiKey}`
-            },
-            data: {
-                model: model,
+        // 从API设置中获取自定义值
+        const apiSettings = JSON.parse(fs.readFileSync(API_SETTINGS_FILE, "utf-8"));
+        const useCustomEndpoint = apiSettings.deepseek?.useCustomEndpoint || false;
+        const customEndpoint = apiSettings.deepseek?.endpoint || '';
+        const customModel = apiSettings.deepseek?.customModel || '';
+        
+        // 使用自定义模型（如果有）
+        const modelToUse = customModel || model;
+        
+        const headers = {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json'
+        };
+        
+        const apiUrl = useCustomEndpoint && customEndpoint 
+            ? customEndpoint 
+            : 'https://api.deepseek.com/v1/chat/completions';
+        
+        console.log(`DeepSeek流式API接入点: ${apiUrl}`);
+        console.log(`DeepSeek流式API使用模型: ${modelToUse}`);
+        
+        const response = await axios.post(
+            apiUrl,
+            {
+                model: modelToUse,
                 messages: [
-                    { role: "system", content: "你是一个有用的助手，能够简洁准确地总结文章。" },
+                    { role: "system", content: "你是一个AI助手，请简明扼要地总结文章要点，不要添加额外解释。" },
                     { role: "user", content: prompt }
                 ],
-                max_tokens: 500,
-                temperature: 0.3
+                temperature: 0.3,
+                max_tokens: 1000,
+                stream: true
+            },
+            { 
+                headers,
+                responseType: 'stream'
             }
-        });
+        );
         
-        return response.data.choices[0].message.content.trim();
+        console.log("收到DeepSeek流式响应，开始处理...");
+        
+        // 创建最终的Promise，处理完整的流式响应
+        return new Promise((resolve, reject) => {
+            let content = '';
+            let buffer = '';
+            
+            response.data.on('data', (chunk) => {
+                try {
+                    const chunkText = chunk.toString();
+                    buffer += chunkText;
+                    
+                    // 按行分割，处理每行数据
+                    const lines = buffer.split('\n');
+                    buffer = lines.pop(); // 保留可能不完整的最后一行
+                    
+                    for (const line of lines) {
+                        // 忽略空行
+                        if (!line.trim()) continue;
+                        
+                        // 处理数据行
+                        if (line.startsWith('data:')) {
+                            const data = line.slice(5).trim();
+                            
+                            // 处理结束标记
+                            if (data === '[DONE]') {
+                                console.log("DeepSeek流式响应完成");
+                                continue;
+                            }
+                            
+                            try {
+                                const parsedData = JSON.parse(data);
+                                const deltaContent = parsedData.choices?.[0]?.delta?.content || '';
+                                
+                                if (deltaContent) {
+                                    content += deltaContent;
+                                    console.log("发送DeepSeek块:", deltaContent.length > 30 ? 
+                                        deltaContent.substring(0, 30) + "..." : deltaContent);
+                                    
+                                    // 发送到渲染进程
+                                    event.sender.send('summarize-stream-chunk', deltaContent);
+                                }
+                            } catch (parseError) {
+                                console.error("解析DeepSeek数据错误:", parseError);
+                                console.log("问题数据行:", line);
+                            }
+                        }
+                    }
+                } catch (error) {
+                    console.error("处理DeepSeek流数据出错:", error);
+                }
+            });
+            
+            response.data.on('end', () => {
+                console.log("DeepSeek流式响应结束");
+                resolve(content);
+            });
+            
+            response.data.on('error', (error) => {
+                console.error("DeepSeek流式响应错误:", error);
+                reject(error);
+            });
+        });
     } catch (error) {
-        console.error("DeepSeek API错误:", error.response?.data || error.message);
-        throw new Error(`DeepSeek API错误: ${error.response?.data?.error?.message || error.message}`);
+        console.error("DeepSeek流式输出错误:", error);
+        throw new Error(`DeepSeek流式输出错误: ${error.message}`);
     }
 }
 
 async function callAnthropic(apiKey, model, prompt) {
     try {
-        const response = await axios({
-            method: 'post',
-            url: 'https://api.anthropic.com/v1/messages',
-            headers: {
-                'Content-Type': 'application/json',
-                'x-api-key': apiKey,
-                'anthropic-version': '2023-06-01'
-            },
-            data: {
-                model: model,
-                messages: [
-                    { role: "user", content: prompt }
-                ],
-                max_tokens: 500,
-                temperature: 0.3
-            }
+        // 从API设置中获取自定义值
+        const apiSettings = JSON.parse(fs.readFileSync(API_SETTINGS_FILE, "utf-8"));
+        const useCustomEndpoint = apiSettings.anthropic?.useCustomEndpoint || false;
+        const customEndpoint = apiSettings.anthropic?.endpoint || '';
+        const customModel = apiSettings.anthropic?.customModel || '';
+        
+        // 使用自定义模型（如果有）
+        const modelToUse = customModel || model;
+        
+        const client = new Anthropic({
+            apiKey,
+            baseURL: useCustomEndpoint && customEndpoint ? customEndpoint : undefined
         });
         
-        return response.data.content[0].text.trim();
+        const stream = await client.messages.create({
+            model: modelToUse,
+            messages: [
+                { role: 'user', content: prompt }
+            ],
+            max_tokens: 1000,
+            stream: true,
+            system: "你是一个AI助手，请简明扼要地总结文章要点，不要添加额外解释。"
+        });
+        
+        let content = '';
+        for await (const chunk of stream) {
+            if (chunk.type === 'content_block_delta') {
+                content += chunk.content_block.text;
+                // 修改事件名
+                event.sender.send('summarize-stream-chunk', chunk.content_block.text);
+                console.log("发送anthropic chunk:", chunk.content_block.text.substring(0, 30) + (chunk.content_block.text.length > 30 ? "..." : ""));
+            }
+        }
+        
+        return content;
     } catch (error) {
-        console.error("Anthropic API错误:", error.response?.data || error.message);
-        throw new Error(`Anthropic API错误: ${error.response?.data?.error?.message || error.message}`);
+        console.error("Anthropic流式输出错误:", error);
+        throw new Error(`Anthropic流式输出错误: ${error.message}`);
     }
 }
 
@@ -740,11 +1078,40 @@ async function processFeedWithAI(feed) {
     // 获取API设置
     try {
         const apiSettings = JSON.parse(fs.readFileSync(API_SETTINGS_FILE, "utf-8"));
-        const provider = apiSettings.activeProvider;
-        const model = apiSettings.providers[provider].model;
-        const length = apiSettings.summaryLength;
-        const apiKey = apiSettings.providers[provider].apiKey;
-
+        console.log("处理Feed的API设置:", JSON.stringify(apiSettings, null, 2));
+        
+        // 支持新旧两种API设置结构
+        // 新结构: activeApi, provider直接包含配置
+        // 旧结构: activeProvider, providers[provider]包含配置
+        
+        // 确定使用哪个提供商
+        const provider = apiSettings.activeApi || apiSettings.activeProvider;
+        
+        if (!provider) {
+            console.log("未配置活跃的API提供商，跳过AI处理");
+            return feed;
+        }
+        
+        console.log("使用的API提供商:", provider);
+        
+        // 确定API配置：优先使用直接配置，然后尝试提供商数组
+        let apiConfig = apiSettings[provider]; // 新结构
+        if (!apiConfig && apiSettings.providers) {
+            apiConfig = apiSettings.providers[provider]; // 旧结构
+        }
+        
+        if (!apiConfig) {
+            console.log(`找不到${provider}的API配置，跳过AI处理`);
+            return feed;
+        }
+        
+        // 获取API密钥和模型
+        const apiKey = apiConfig.apiKey;
+        const model = apiConfig.customModel || apiConfig.model;
+        
+        // 获取摘要长度设置
+        const length = apiSettings.summaryLength || "medium";
+        
         // 为尚未有摘要的文章生成摘要
         if (apiKey && feed.items && feed.items.length > 0) {
             const articlesToSummarize = feed.items.filter(item => !item.summary || item.summary.trim().length === 0);
@@ -816,11 +1183,15 @@ ipcMain.handle("summarize-article-stream", async (event, { text, provider, model
         const apiSettings = JSON.parse(fs.readFileSync(API_SETTINGS_FILE, "utf-8"));
         
         // 如果未提供参数，使用默认设置
-        provider = provider || apiSettings.activeProvider;
-        model = model || apiSettings.providers[provider].model;
-        length = length || apiSettings.summaryLength;
+        provider = provider || apiSettings.activeApi;
         
-        const apiKey = apiSettings.providers[provider].apiKey;
+        if (!apiSettings[provider]) {
+            throw new Error(`未找到${provider}的配置`);
+        }
+        
+        model = model || apiSettings[provider].customModel || apiSettings[provider].model;
+        
+        const apiKey = apiSettings[provider].apiKey;
         if (!apiKey) {
             throw new Error(`未配置${provider}的API密钥`);
         }
@@ -876,150 +1247,337 @@ ipcMain.handle("summarize-article-stream", async (event, { text, provider, model
 // 流式调用OpenAI API
 async function streamOpenAI(event, apiKey, model, prompt) {
     try {
-        const response = await axios({
-            method: 'post',
-            url: 'https://api.openai.com/v1/chat/completions',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${apiKey}`
-            },
-            data: {
-                model: model,
+        // 获取自定义设置
+        const apiSettings = JSON.parse(fs.readFileSync(API_SETTINGS_FILE, "utf-8"));
+        const useCustomEndpoint = apiSettings.openai?.useCustomEndpoint || false;
+        const customEndpoint = apiSettings.openai?.endpoint || '';
+        const customModel = apiSettings.openai?.customModel || '';
+        
+        // 使用自定义模型（如果有）
+        const modelToUse = customModel || model;
+        
+        // 使用自定义接入点或默认接入点
+        const apiEndpoint = useCustomEndpoint && customEndpoint 
+            ? customEndpoint 
+            : 'https://api.openai.com';
+            
+        console.log(`流式API接入点原始URL: ${apiEndpoint}`);
+        
+        // 确保URL格式正确
+        let baseURL = apiEndpoint;
+        
+        // 如果URL不包含协议，添加https://
+        if (!baseURL.startsWith('http://') && !baseURL.startsWith('https://')) {
+            baseURL = 'https://' + baseURL;
+            console.log(`添加https协议: ${baseURL}`);
+        }
+        
+        // 确保不以/v1结尾
+        if (baseURL.endsWith('/v1')) {
+            baseURL = baseURL.slice(0, -3);
+            console.log(`删除尾部/v1: ${baseURL}`);
+        }
+        
+        // 去除尾部斜杠
+        if (baseURL.endsWith('/')) {
+            baseURL = baseURL.slice(0, -1);
+            console.log(`删除尾部斜杠: ${baseURL}`);
+        }
+        
+        console.log(`处理后的基础URL: ${baseURL}`);
+        
+        // 检查是否需要添加 /v1 路径
+        // 对于自定义接入点，我们不自动添加 /v1，而是依赖用户提供完整的正确路径
+        let apiPath = '';
+        if (!useCustomEndpoint) {
+            apiPath = '/v1'; // 只有官方API才自动添加/v1路径
+        }
+        
+        console.log(`使用模型: ${modelToUse}`);
+        console.log(`使用的API路径: ${baseURL}${apiPath}`);
+        
+        try {
+            console.log(`正在创建OpenAI客户端，API密钥长度: ${apiKey.length}, baseURL: ${baseURL}${apiPath}`);
+            
+            // 创建OpenAI客户端
+            const client = new OpenAI({
+                apiKey: apiKey,
+                baseURL: baseURL + apiPath,
+                timeout: 30000
+            });
+
+            console.log("OpenAI客户端创建成功");
+            console.log("创建OpenAI流式请求...");
+            
+            // 添加更多错误处理和验证
+            if (!prompt) {
+                throw new Error("提示词为空");
+            }
+            
+            if (!modelToUse) {
+                throw new Error("模型名称为空");
+            }
+            
+            const stream = await client.chat.completions.create({
+                model: modelToUse,
                 messages: [
-                    { role: "system", content: "你是一个有用的助手，能够简洁准确地总结文章。" },
+                    { role: "system", content: "你是一个AI助手，请简明扼要地总结文章要点，不要添加额外解释。" },
                     { role: "user", content: prompt }
                 ],
-                max_tokens: 500,
+                stream: true,
                 temperature: 0.3,
-                stream: true  // 启用流式输出
-            },
-            responseType: 'stream'
-        });
-        
-        response.data.on('data', (chunk) => {
+                max_tokens: 1000,
+            });
+
+            console.log("收到流式响应，开始处理...");
+            let content = '';
+            let chunkCount = 0;
+            
+            console.log("准备进入流式处理循环...");
             try {
-                const lines = chunk.toString().split('\n').filter(line => line.trim() !== '');
-                for (const line of lines) {
-                    if (line.includes('[DONE]')) continue;
-                    if (line.startsWith('data: ')) {
-                        const data = JSON.parse(line.substring(6));
-                        if (data.choices && data.choices[0].delta && data.choices[0].delta.content) {
-                            // 发送部分文本给渲染进程
-                            event.sender.send('summarize-stream-chunk', data.choices[0].delta.content);
+                for await (const chunk of stream) {
+                    try {
+                        chunkCount++;
+                        console.log(`处理第 ${chunkCount} 个响应块...`);
+                        // 记录原始块数据
+                        console.log("原始块数据:", JSON.stringify(chunk));
+                        
+                        // 添加更详细的日志记录和错误处理
+                        if (!chunk.choices || chunk.choices.length === 0) {
+                            console.log("收到无效块:", JSON.stringify(chunk));
+                            continue;
                         }
+                        
+                        console.log("块选择项:", JSON.stringify(chunk.choices));
+                        console.log("块Delta:", JSON.stringify(chunk.choices[0]?.delta));
+                        
+                        const partialText = chunk.choices[0]?.delta?.content || "";
+                        console.log("提取的部分文本:", partialText);
+                        
+                        if (partialText) {
+                            content += partialText;
+                            event.sender.send('summarize-stream-chunk', partialText);
+                            console.log("发送chunk:", partialText.length > 20 ? 
+                                partialText.substring(0, 20) + "..." : partialText);
+                        }
+                    } catch (chunkError) {
+                        console.error("处理块数据时出错:", chunkError);
+                        console.log("问题块数据:", JSON.stringify(chunk));
                     }
                 }
-            } catch (err) {
-                console.error("解析流式响应出错:", err);
+            } catch (streamError) {
+                console.error("处理流式数据时出错:", streamError);
+                // 记录更多有关错误的详细信息
+                if (streamError.response) {
+                    console.error("API响应状态码:", streamError.response.status);
+                    console.error("API响应头部:", JSON.stringify(streamError.response.headers));
+                    console.error("API响应数据:", JSON.stringify(streamError.response.data));
+                }
+                event.sender.send('summarize-stream-error', `流式处理失败: ${streamError.message}`);
+                throw new Error(`流式处理错误: ${streamError.message}`);
             }
-        });
-        
-        return new Promise((resolve, reject) => {
-            response.data.on('end', resolve);
-            response.data.on('error', reject);
-        });
+            
+            console.log(`流式处理完成，总共处理了 ${chunkCount} 个响应块`);
+            
+            // 如果没有收到任何内容，尝试非流式API调用作为备选
+            if (chunkCount === 0 || content.trim() === '') {
+                console.log("流式API未返回任何内容，可能是自定义接入点不支持流式API，尝试使用非流式API...");
+                
+                // 更详细的错误信息
+                let errorMessage = "自定义接入点可能不支持流式API或当前配置不正确";
+                if (useCustomEndpoint) {
+                    errorMessage += `。请确认您的自定义接入点 (${baseURL}) 支持流式输出，并确认接入点URL是否正确。`;
+                    errorMessage += `如果您的接入点需要特殊路径格式，请在URL中包含完整路径，例如 https://your-api.domain/v1/chat`;
+                }
+                
+                event.sender.send('summarize-stream-error', errorMessage);
+                // 这里不直接调用非流式API，而是通知前端进行处理
+                throw new Error(errorMessage);
+            }
+            // 完成流处理后，发送结束信号
+            event.sender.send('summarize-stream-end');
+            console.log("流式处理完成，已发送结束信号");
+            
+            return content.trim();
+        } catch (apiError) {
+            console.error("OpenAI API调用错误:", apiError);
+            
+            // 检查是否是网络错误
+            if (apiError.code === 'ENOTFOUND' || apiError.code === 'ECONNREFUSED') {
+                throw new Error(`无法连接到API服务器 ${baseURL}: ${apiError.message}`);
+            }
+            
+            // 检查是否是验证错误
+            if (apiError.status === 401) {
+                throw new Error("API密钥无效");
+            }
+            
+            // 检查是否是URL错误
+            if (apiError.status === 404) {
+                throw new Error(`API接入点URL无效: ${baseURL}`);
+            }
+            
+            throw new Error(`OpenAI流式输出错误: ${apiError.message}`);
+        }
     } catch (error) {
-        console.error("OpenAI流式API错误:", error);
-        throw error;
+        console.error("OpenAI流式输出错误:", error);
+        // 发送错误给前端
+        event.sender.send('summarize-stream-error', error.message);
+        throw new Error(`OpenAI流式输出错误: ${error.message}`);
     }
 }
 
 // 流式调用DeepSeek API
 async function streamDeepSeek(event, apiKey, model, prompt) {
     try {
-        const response = await axios({
-            method: 'post',
-            url: 'https://api.deepseek.com/v1/chat/completions',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${apiKey}`
-            },
-            data: {
-                model: model,
+        // 获取自定义设置
+        const apiSettings = JSON.parse(fs.readFileSync(API_SETTINGS_FILE, "utf-8"));
+        const useCustomEndpoint = apiSettings.deepseek?.useCustomEndpoint || false;
+        const customEndpoint = apiSettings.deepseek?.endpoint || '';
+        const customModel = apiSettings.deepseek?.customModel || '';
+        
+        // 使用自定义模型（如果有）
+        const modelToUse = customModel || model;
+        
+        const headers = {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json'
+        };
+        
+        const apiUrl = useCustomEndpoint && customEndpoint 
+            ? customEndpoint 
+            : 'https://api.deepseek.com/v1/chat/completions';
+        
+        console.log(`DeepSeek流式API接入点: ${apiUrl}`);
+        console.log(`DeepSeek流式API使用模型: ${modelToUse}`);
+        
+        const response = await axios.post(
+            apiUrl,
+            {
+                model: modelToUse,
                 messages: [
-                    { role: "system", content: "你是一个有用的助手，能够简洁准确地总结文章。" },
+                    { role: "system", content: "你是一个AI助手，请简明扼要地总结文章要点，不要添加额外解释。" },
                     { role: "user", content: prompt }
                 ],
-                max_tokens: 500,
                 temperature: 0.3,
+                max_tokens: 1000,
                 stream: true
             },
-            responseType: 'stream'
-        });
+            { 
+                headers,
+                responseType: 'stream'
+            }
+        );
         
-        response.data.on('data', (chunk) => {
-            try {
-                const lines = chunk.toString().split('\n').filter(line => line.trim() !== '');
-                for (const line of lines) {
-                    if (line.includes('[DONE]')) continue;
-                    if (line.startsWith('data: ')) {
-                        const data = JSON.parse(line.substring(6));
-                        if (data.choices && data.choices[0].delta && data.choices[0].delta.content) {
-                            event.sender.send('summarize-stream-chunk', data.choices[0].delta.content);
+        console.log("收到DeepSeek流式响应，开始处理...");
+        
+        // 创建最终的Promise，处理完整的流式响应
+        return new Promise((resolve, reject) => {
+            let content = '';
+            let buffer = '';
+            
+            response.data.on('data', (chunk) => {
+                try {
+                    const chunkText = chunk.toString();
+                    buffer += chunkText;
+                    
+                    // 按行分割，处理每行数据
+                    const lines = buffer.split('\n');
+                    buffer = lines.pop(); // 保留可能不完整的最后一行
+                    
+                    for (const line of lines) {
+                        // 忽略空行
+                        if (!line.trim()) continue;
+                        
+                        // 处理数据行
+                        if (line.startsWith('data:')) {
+                            const data = line.slice(5).trim();
+                            
+                            // 处理结束标记
+                            if (data === '[DONE]') {
+                                console.log("DeepSeek流式响应完成");
+                                continue;
+                            }
+                            
+                            try {
+                                const parsedData = JSON.parse(data);
+                                const deltaContent = parsedData.choices?.[0]?.delta?.content || '';
+                                
+                                if (deltaContent) {
+                                    content += deltaContent;
+                                    console.log("发送DeepSeek块:", deltaContent.length > 30 ? 
+                                        deltaContent.substring(0, 30) + "..." : deltaContent);
+                                    
+                                    // 发送到渲染进程
+                                    event.sender.send('summarize-stream-chunk', deltaContent);
+                                }
+                            } catch (parseError) {
+                                console.error("解析DeepSeek数据错误:", parseError);
+                                console.log("问题数据行:", line);
+                            }
                         }
                     }
+                } catch (error) {
+                    console.error("处理DeepSeek流数据出错:", error);
                 }
-            } catch (err) {
-                console.error("解析流式响应出错:", err);
-            }
-        });
-        
-        return new Promise((resolve, reject) => {
-            response.data.on('end', resolve);
-            response.data.on('error', reject);
+            });
+            
+            response.data.on('end', () => {
+                console.log("DeepSeek流式响应结束");
+                resolve(content);
+            });
+            
+            response.data.on('error', (error) => {
+                console.error("DeepSeek流式响应错误:", error);
+                reject(error);
+            });
         });
     } catch (error) {
-        console.error("DeepSeek流式API错误:", error);
-        throw error;
+        console.error("DeepSeek流式输出错误:", error);
+        throw new Error(`DeepSeek流式输出错误: ${error.message}`);
     }
 }
 
 // 流式调用Anthropic API
 async function streamAnthropic(event, apiKey, model, prompt) {
     try {
-        const response = await axios({
-            method: 'post',
-            url: 'https://api.anthropic.com/v1/messages',
-            headers: {
-                'Content-Type': 'application/json',
-                'x-api-key': apiKey,
-                'anthropic-version': '2023-06-01'
-            },
-            data: {
-                model: model,
-                messages: [
-                    { role: "user", content: prompt }
-                ],
-                max_tokens: 500,
-                temperature: 0.3,
-                stream: true
-            },
-            responseType: 'stream'
+        // 获取自定义设置
+        const apiSettings = JSON.parse(fs.readFileSync(API_SETTINGS_FILE, "utf-8"));
+        const useCustomEndpoint = apiSettings.anthropic?.useCustomEndpoint || false;
+        const customEndpoint = apiSettings.anthropic?.endpoint || '';
+        const customModel = apiSettings.anthropic?.customModel || '';
+        
+        // 使用自定义模型（如果有）
+        const modelToUse = customModel || model;
+        
+        const client = new Anthropic({
+            apiKey,
+            baseURL: useCustomEndpoint && customEndpoint ? customEndpoint : undefined
         });
         
-        response.data.on('data', (chunk) => {
-            try {
-                const lines = chunk.toString().split('\n').filter(line => line.trim() !== '');
-                for (const line of lines) {
-                    if (line.includes('[DONE]')) continue;
-                    if (line.startsWith('data: ')) {
-                        const data = JSON.parse(line.substring(6));
-                        if (data.type === 'content_block_delta' && data.delta && data.delta.text) {
-                            event.sender.send('summarize-stream-chunk', data.delta.text);
-                        }
-                    }
-                }
-            } catch (err) {
-                console.error("解析流式响应出错:", err);
+        const stream = await client.messages.create({
+            model: modelToUse,
+            messages: [
+                { role: 'user', content: prompt }
+            ],
+            max_tokens: 1000,
+            stream: true,
+            system: "你是一个AI助手，请简明扼要地总结文章要点，不要添加额外解释。"
+        });
+        
+        let content = '';
+        for await (const chunk of stream) {
+            if (chunk.type === 'content_block_delta') {
+                content += chunk.content_block.text;
+                // 修改事件名
+                event.sender.send('summarize-stream-chunk', chunk.content_block.text);
+                console.log("发送anthropic chunk:", chunk.content_block.text.substring(0, 30) + (chunk.content_block.text.length > 30 ? "..." : ""));
             }
-        });
+        }
         
-        return new Promise((resolve, reject) => {
-            response.data.on('end', resolve);
-            response.data.on('error', reject);
-        });
+        return content;
     } catch (error) {
-        console.error("Anthropic流式API错误:", error);
-        throw error;
+        console.error("Anthropic流式输出错误:", error);
+        throw new Error(`Anthropic流式输出错误: ${error.message}`);
     }
 }
