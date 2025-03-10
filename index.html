@@ -34,28 +34,28 @@
             
             /* 左侧栏 - RSS源列表 */
             .sources-column {
-                width: 300px;
-                min-width: 250px;
-                max-width: 400px;
+                width: 280px;
+                min-width: 280px;
+                max-width: 280px;
                 border-right: 1px solid #e0e0e0;
                 background: white;
                 display: flex;
                 flex-direction: column;
                 overflow: hidden;
-                resize: horizontal;
+                resize: none;
             }
             
             /* 中间栏 - 文章列表 */
             .articles-column {
-                width: 300px;
-                min-width: 250px;
-                max-width: 400px;
+                width: 280px;
+                min-width: 280px;
+                max-width: 280px;
                 border-right: 1px solid #e0e0e0;
                 background: white;
                 display: flex;
                 flex-direction: column;
                 overflow: hidden;
-                resize: horizontal;
+                resize: none;
             }
             
             /* 右侧栏 - 文章内容 */
@@ -85,6 +85,22 @@
                 display: flex;
                 align-items: center;
                 gap: 8px;
+                text-rendering: optimizeLegibility;
+                -webkit-font-smoothing: antialiased;
+            }
+            
+            /* 确保所有列标题使用相同的字体粗细和渲染方式 */
+            #articles-header, #content-header {
+                font-weight: 600 !important;
+                text-rendering: optimizeLegibility !important;
+                -webkit-font-smoothing: antialiased !important;
+            }
+            
+            /* 标题文本样式 */
+            .header-text {
+                font-weight: 600;
+                text-rendering: optimizeLegibility;
+                -webkit-font-smoothing: antialiased;
             }
             
             /* 内容区域 */
@@ -778,7 +794,7 @@
             <!-- 左侧栏：RSS源列表 -->
             <div class="sources-column">
                 <div class="column-header">
-                    <h2><i class="fas fa-rss"></i> RSS 源</h2>
+                    <h2><i class="fas fa-rss"></i> <span class="header-text">RSS 源</span></h2>
                     <button id="add-rss-button" class="add-feed-button"><i class="fas fa-plus"></i></button>
                 </div>
                 <div class="column-content">
@@ -793,7 +809,7 @@
             <!-- 中间栏：文章列表 -->
             <div class="articles-column">
                 <div class="column-header">
-                    <h2 id="articles-header"><i class="fas fa-newspaper"></i> 文章列表</h2>
+                    <h2 id="articles-header"><i class="fas fa-newspaper"></i> <span class="header-text">文章列表</span></h2>
                 </div>
                 <div class="column-content">
                     <div id="articles-container">
@@ -805,7 +821,7 @@
             <!-- 右侧栏：文章内容 -->
             <div class="content-column">
                 <div class="column-header">
-                    <h2 id="content-header"><i class="fas fa-book-open"></i> 文章内容</h2>
+                    <h2 id="content-header"><i class="fas fa-book-open"></i> <span class="header-text">文章内容</span></h2>
                     <div class="header-actions">
                         <button id="app-settings-toggle" class="icon-button" title="应用设置">
                             <i class="fas fa-cog"></i>

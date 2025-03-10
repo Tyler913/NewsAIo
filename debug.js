@@ -1749,7 +1749,7 @@ async function handleSourceClick(e) {
         
         const articlesHeader = document.getElementById("articles-header");
         if (articlesHeader) {
-            articlesHeader.innerHTML = `<i class="fas fa-exclamation-triangle"></i> 加载失败`;
+            articlesHeader.innerHTML = `<i class="fas fa-exclamation-triangle"></i> <span class="header-text">加载失败</span>`;
         }
         
         showNotification("加载文章失败: " + error.message, "error");
@@ -1998,7 +1998,7 @@ function displayArticleContent(article) {
         // 更新标题
         const contentHeader = document.getElementById('content-header');
         if (contentHeader) {
-            contentHeader.innerHTML = `<i class="fas fa-book-open"></i> ${t('article_content')}`;
+            contentHeader.innerHTML = `<i class="fas fa-book-open"></i> <span class="header-text">${t('article_content')}</span>`;
         }
         
         // 确保所有内容区域都继承字体大小
@@ -2117,7 +2117,7 @@ function resetArticleContent(message = null) {
     
     const contentHeader = document.getElementById('content-header');
     if (contentHeader) {
-        contentHeader.innerHTML = `<i class="fas fa-book-open"></i> ${t('article_content')}`;
+        contentHeader.innerHTML = `<i class="fas fa-book-open"></i> <span class="header-text">${t('article_content')}</span>`;
     }
 }
 

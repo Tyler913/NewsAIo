@@ -1258,13 +1258,14 @@ body.dark-mode .translation-content {
 #application-settings-panel,
 #ai-settings-panel,
 #translation-settings-panel {
-    display: none;
+    transform: translateX(100%);
+    transition: transform 0.3s ease;
 }
 
 #application-settings-panel.active,
 #ai-settings-panel.active,
 #translation-settings-panel.active {
-    display: flex;
+    transform: translateX(0);
 }
 
 /* 确保下拉菜单可见 */
