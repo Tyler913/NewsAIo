@@ -585,9 +585,46 @@ function bindEventListeners() {
     // Add RSS source button
     const addRssButton = document.getElementById('add-rss-button');
     if (addRssButton) {
-        addRssButton.addEventListener('click', () => {
+        addRssButton.addEventListener('click', async () => {
             const modal = document.getElementById('add-feed-modal');
-            if (modal) modal.style.display = 'flex';
+            if (!modal) return;
+            
+            // 清空输入框
+            const urlInput = document.getElementById('rss-url-input');
+            const newCategoryInput = document.getElementById('new-feed-category');
+            if (urlInput) urlInput.value = '';
+            if (newCategoryInput) newCategoryInput.value = '';
+            
+            // 加载当前分类列表
+            const categorySelect = document.getElementById('feed-category-select');
+            if (categorySelect) {
+                try {
+                    // 获取当前所有分类
+                    const sources = await window.electronAPI.getRssSources();
+                    const categories = new Set();
+                    
+                    // 收集所有现有分类
+                    if (sources && Array.isArray(sources)) {
+                        sources.forEach(source => {
+                            if (source.category && source.category !== '未分类') {
+                                categories.add(source.category);
+                            }
+                        });
+                    }
+                    
+                    // 更新下拉选项
+                    let options = '<option value="未分类">未分类</option>';
+                    categories.forEach(category => {
+                        options += `<option value="${category}">${category}</option>`;
+                    });
+                    categorySelect.innerHTML = options;
+                } catch (error) {
+                    console.error("加载分类列表失败:", error);
+                }
+            }
+            
+            // 显示模态框
+            modal.style.display = 'flex';
         });
     }
     
@@ -596,25 +633,63 @@ function bindEventListeners() {
     if (submitRssButton) {
         submitRssButton.addEventListener('click', async () => {
             const input = document.getElementById('rss-url-input');
-            if (input && input.value.trim()) {
-                try {
-                    await window.electronAPI.addRssSource(input.value.trim());
-                    input.value = '';
-                    
-                    // 关闭模态框
-                    const modal = document.getElementById('add-feed-modal');
-                    if (modal) modal.style.display = 'none';
-                    
-                    // 重新加载RSS源
-                    loadRssSources();
-                    
-                    showNotification(t('source_added'));
-                } catch (error) {
-                    console.error("添加RSS源失败:", error);
-                    showNotification(t('connection_error'), "error");
-                }
-            } else {
+            const categorySelect = document.getElementById('feed-category-select');
+            const newCategoryInput = document.getElementById('new-feed-category');
+            
+            if (!input || !input.value.trim()) {
                 showNotification(t('invalid_url'), "error");
+                return;
+            }
+            
+            try {
+                // 确定分类
+                let category = '未分类';
+                if (newCategoryInput && newCategoryInput.value.trim()) {
+                    category = newCategoryInput.value.trim();
+                } else if (categorySelect && categorySelect.value) {
+                    category = categorySelect.value;
+                }
+                
+                // 获取当前源列表
+                let sources = await window.electronAPI.getRssSources();
+                if (!Array.isArray(sources)) {
+                    sources = [];
+                }
+                
+                // 添加新源
+                const response = await window.electronAPI.fetchRss(input.value.trim());
+                if (!response || !response.title) {
+                    throw new Error("无法解析该RSS源");
+                }
+                
+                // 创建新源对象
+                const newSource = {
+                    url: input.value.trim(),
+                    title: response.title || input.value.trim(),
+                    category: category
+                };
+                
+                // 添加到源列表
+                sources.push(newSource);
+                
+                // 保存更新后的源列表
+                await window.electronAPI.saveRssSources(sources);
+                
+                // 清空输入框
+                input.value = '';
+                if (newCategoryInput) newCategoryInput.value = '';
+                
+                // 关闭模态框
+                const modal = document.getElementById('add-feed-modal');
+                if (modal) modal.style.display = 'none';
+                
+                // 重新加载RSS源
+                renderRssSources(sources);
+                
+                showNotification(t('source_added'));
+            } catch (error) {
+                console.error("添加RSS源失败:", error);
+                showNotification(t('connection_error'), "error");
             }
         });
     }
@@ -1680,30 +1755,107 @@ function renderRssSources(sources) {
     }
     
     try {
-        // 生成源列表HTML
+        // 按分类整理源
         console.log(`生成${sources.length}个RSS源的HTML`);
+        const categorizedSources = {};
+        
+        // 为没有分类的源添加默认分类
+        sources.forEach(source => {
+            const category = source.category || '未分类';
+            if (!categorizedSources[category]) {
+                categorizedSources[category] = [];
+            }
+            categorizedSources[category].push(source);
+        });
+        
+        // 生成分类列表HTML
         let html = '';
         
-        sources.forEach((source, index) => {
-            // 确保源有标题
-            const title = source.title || source.url || '未命名订阅源';
+        // 遍历所有分类
+        Object.keys(categorizedSources).forEach(category => {
+            const categoryFeeds = categorizedSources[category];
+            const categoryId = `category-${category.replace(/\s+/g, '-').toLowerCase()}`;
+            
+            // 生成分类标题
+            html += `
+                <div class="category-container">
+                    <div class="category-header" data-category="${category}">
+                        <i class="fas fa-caret-right category-toggle"></i>
+                        <span class="category-name">${category}</span>
+                        <span class="category-count">(${categoryFeeds.length})</span>
+                    </div>
+                    <ul class="category-feeds" id="${categoryId}">
+            `;
+            
+            // 生成该分类下的所有feed
+            categoryFeeds.forEach((source, index) => {
+                // 确保源有标题
+                const title = source.title || source.url || '未命名订阅源';
+                const globalIndex = sources.indexOf(source);
+                
+                html += `
+                    <li class="source-item" data-url="${source.url}" data-index="${globalIndex}" data-category="${category}">
+                        <i class="fas fa-rss"></i> ${title}
+                        <div class="source-item-actions">
+                            <i class="fas fa-ellipsis-v feed-actions-toggle"></i>
+                        </div>
+                    </li>
+                `;
+            });
             
             html += `
-                <li class="source-item" data-url="${source.url}" data-index="${index}">
-                    <i class="fas fa-rss"></i> ${title}
-                </li>
+                    </ul>
+                </div>
             `;
         });
         
         // 更新DOM
         window.rssSourcesList.innerHTML = html;
         
-        // 添加点击事件
+        // 添加分类的折叠/展开功能
+        const categoryHeaders = document.querySelectorAll(".category-header");
+        categoryHeaders.forEach(header => {
+            header.addEventListener("click", function() {
+                const category = this.getAttribute("data-category");
+                const categoryId = `category-${category.replace(/\s+/g, '-').toLowerCase()}`;
+                const feedsList = document.getElementById(categoryId);
+                const caretIcon = this.querySelector(".category-toggle");
+                
+                // 切换展开/折叠状态
+                if (feedsList.style.display === "none") {
+                    feedsList.style.display = "block";
+                    caretIcon.classList.remove("fa-caret-right");
+                    caretIcon.classList.add("fa-caret-down");
+                } else {
+                    feedsList.style.display = "none";
+                    caretIcon.classList.remove("fa-caret-down");
+                    caretIcon.classList.add("fa-caret-right");
+                }
+            });
+        });
+        
+        // 添加源项目的点击事件
         const sourceItems = document.querySelectorAll(".source-item");
         if (sourceItems.length > 0) {
             console.log(`为${sourceItems.length}个源项添加点击事件`);
             sourceItems.forEach(item => {
                 item.addEventListener("click", handleSourceClick);
+            });
+            
+            // 添加操作菜单点击事件
+            const actionToggles = document.querySelectorAll(".feed-actions-toggle");
+            actionToggles.forEach(toggle => {
+                toggle.addEventListener("click", function(e) {
+                    e.stopPropagation(); // 阻止事件冒泡
+                    
+                    const sourceItem = this.closest(".source-item");
+                    const sourceIndex = sourceItem.getAttribute("data-index");
+                    const sourceUrl = sourceItem.getAttribute("data-url");
+                    const category = sourceItem.getAttribute("data-category");
+                    
+                    // 显示操作菜单
+                    showFeedContextMenu(sourceItem, sourceIndex, sourceUrl, category);
+                });
             });
             
             // 可选: 自动选择第一个源
@@ -1730,109 +1882,168 @@ function renderRssSources(sources) {
     }
 }
 
-// 处理RSS源点击事件
-async function handleSourceClick(e) {
-    try {
-        const sourceItem = e.currentTarget;
-        const sourceUrl = sourceItem.dataset.url;
-        const sourceIndex = parseInt(sourceItem.dataset.index);
-        
-        // 不重复加载相同的源
-        if (sourceUrl === window.currentFeedUrl) return;
-        
-        console.log(`选择RSS源: ${sourceUrl}`);
-        
-        // 更新当前源URL
-        window.currentFeedUrl = sourceUrl;
-        
-        // 添加选中状态
-        document.querySelectorAll(".source-item").forEach(item => {
-            item.classList.remove("selected");
-        });
-        sourceItem.classList.add("selected");
-        
-        // 获取文章列表容器和头部元素
-        if (!articlesContainer) {
-            articlesContainer = document.getElementById("articles-container");
-        }
-        
-        // 获取文章标题元素
-        const articlesHeader = document.getElementById("articles-header");
-        
-        // 确保容器存在
-        if (!articlesContainer) {
-            console.error("文章列表容器未找到");
-            showNotification("无法显示文章列表", "error");
-            return;
-        }
-        
-        // 显示加载中
-        articlesContainer.innerHTML = '<div class="loader"><span class="loading-indicator"></span> 加载文章中...</div>';
-        
-        // 更新标题（如果存在）
-        if (articlesHeader) {
-            articlesHeader.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 加载中...';
-        }
-        
-        // 确保文章显示容器已初始化
-        if (!articleContainer) {
-            articleContainer = document.getElementById("article-container");
-        }
-        
-        // 重置文章内容
-        resetArticleContent();
-        
-        console.log("开始获取RSS内容:", sourceUrl);
-        
-        // 添加超时处理
-        const timeoutPromise = new Promise((_, reject) => {
-            setTimeout(() => reject(new Error("加载文章超时，请检查网络连接")), 15000);
-        });
-        
-        // 获取RSS内容
-        const feed = await Promise.race([
-            window.electronAPI.fetchRss(sourceUrl),
-            timeoutPromise
-        ]);
-        
-        console.log(`获取到 ${feed && feed.items ? feed.items.length : 0} 篇文章`);
-        
-        if (!feed || !feed.items) {
-            throw new Error("无法解析RSS内容");
-        }
-        
-        // 保存文章列表
-        window.currentArticles = feed.items || [];
-        
-        // 更新标题
-        if (articlesHeader) {
-            articlesHeader.innerHTML = `<i class="fas fa-newspaper"></i> ${feed.title || '文章列表'}`;
-        }
-        
-        // 渲染文章列表
-        renderArticlesList(window.currentArticles);
-        
-        // 如果有文章，默认选中第一篇
-        if (window.currentArticles.length > 0) {
-            const firstArticle = document.querySelector(".article-item");
-            if (firstArticle) {
-                firstArticle.click();
-            }
-        }
-    } catch (error) {
-        console.error("加载RSS文章失败:", error);
-        
-        if (articlesContainer) {
-            articlesContainer.innerHTML = `<div class="error-message">加载文章失败: ${error.message}</div>`;
-        }
-        
-        const articlesHeader = document.getElementById("articles-header");
-        if (articlesHeader) {
-            articlesHeader.innerHTML = `<i class="fas fa-exclamation-triangle"></i> <span class="header-text">加载失败</span>`;
-        }
-        
-        showNotification("加载文章失败: " + error.message, "error");
+// 显示Feed上下文菜单
+function showFeedContextMenu(element, sourceIndex, sourceUrl, category) {
+    // 先移除已有的上下文菜单
+    const existingMenu = document.querySelector(".feed-context-menu");
+    if (existingMenu) {
+        existingMenu.remove();
     }
+    
+    // 创建新的上下文菜单
+    const menu = document.createElement("div");
+    menu.className = "feed-context-menu";
+    
+    // 获取元素位置
+    const rect = element.getBoundingClientRect();
+    
+    // 设置菜单内容
+    menu.innerHTML = `
+        <ul>
+            <li class="menu-item" data-action="change-category" data-index="${sourceIndex}" data-url="${sourceUrl}">
+                <i class="fas fa-folder"></i> 修改分类
+            </li>
+            <li class="menu-item" data-action="delete-feed" data-index="${sourceIndex}" data-url="${sourceUrl}">
+                <i class="fas fa-trash"></i> 删除订阅源
+            </li>
+        </ul>
+    `;
+    
+    // 放置菜单到正确位置
+    menu.style.top = `${rect.bottom}px`;
+    menu.style.left = `${rect.left}px`;
+    
+    document.body.appendChild(menu);
+    
+    // 添加菜单项点击事件
+    const menuItems = menu.querySelectorAll(".menu-item");
+    menuItems.forEach(item => {
+        item.addEventListener("click", handleFeedContextMenuAction);
+    });
+    
+    // 点击其他地方关闭菜单
+    document.addEventListener("click", function closeMenu(e) {
+        if (!menu.contains(e.target) && !element.contains(e.target)) {
+            menu.remove();
+            document.removeEventListener("click", closeMenu);
+        }
+    });
+}
+
+// 处理Feed上下文菜单操作
+async function handleFeedContextMenuAction(e) {
+    const action = this.getAttribute("data-action");
+    const sourceIndex = parseInt(this.getAttribute("data-index"));
+    const sourceUrl = this.getAttribute("data-url");
+    
+    // 关闭菜单
+    const menu = this.closest(".feed-context-menu");
+    if (menu) menu.remove();
+    
+    // 获取当前源列表
+    let sources = await window.electronAPI.getRssSources();
+    
+    switch (action) {
+        case "change-category":
+            showChangeCategoryDialog(sourceIndex, sources);
+            break;
+            
+        case "delete-feed":
+            if (confirm("确定要删除这个订阅源吗?")) {
+                sources.splice(sourceIndex, 1);
+                await window.electronAPI.saveRssSources(sources);
+                renderRssSources(sources);
+                showNotification("订阅源已删除");
+            }
+            break;
+    }
+}
+
+// 显示修改分类对话框
+function showChangeCategoryDialog(sourceIndex, sources) {
+    // 获取当前所有分类
+    const categories = new Set();
+    sources.forEach(source => {
+        if (source.category) {
+            categories.add(source.category);
+        }
+    });
+    
+    // 创建对话框
+    const dialog = document.createElement("div");
+    dialog.className = "modal";
+    dialog.innerHTML = `
+        <div class="modal-content">
+            <span class="close-button" id="category-close-button">&times;</span>
+            <h2>修改分类</h2>
+            <div class="modal-form">
+                <div class="form-group">
+                    <label for="category-select">选择现有分类:</label>
+                    <select id="category-select">
+                        <option value="">-- 选择分类 --</option>
+                        <option value="未分类">未分类</option>
+                        ${Array.from(categories).map(cat => `<option value="${cat}">${cat}</option>`).join('')}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="new-category">或创建新分类:</label>
+                    <input type="text" id="new-category" placeholder="输入新分类名称">
+                </div>
+                <div class="modal-buttons">
+                    <button id="cancel-category">取消</button>
+                    <button id="save-category" class="primary-button">保存</button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(dialog);
+    
+    // 设置对话框显示样式为flex，使其可见
+    dialog.style.display = "flex";
+    
+    // 添加事件监听器
+    const cancelBtn = document.getElementById("cancel-category");
+    const saveBtn = document.getElementById("save-category");
+    const categorySelect = document.getElementById("category-select");
+    const newCategory = document.getElementById("new-category");
+    const closeBtn = document.getElementById("category-close-button");
+    const modalContent = dialog.querySelector(".modal-content");
+    
+    // 关闭按钮事件
+    if (closeBtn) {
+        closeBtn.addEventListener("click", () => {
+            dialog.remove();
+        });
+    }
+    
+    // 点击对话框外部关闭
+    dialog.addEventListener("click", (e) => {
+        if (e.target === dialog && !modalContent.contains(e.target)) {
+            dialog.remove();
+        }
+    });
+    
+    cancelBtn.addEventListener("click", () => {
+        dialog.remove();
+    });
+    
+    saveBtn.addEventListener("click", async () => {
+        let category = newCategory.value.trim();
+        if (!category) {
+            category = categorySelect.value;
+        }
+        
+        // 更新源的分类
+        if (sources[sourceIndex]) {
+            sources[sourceIndex].category = category || "未分类";
+            await window.electronAPI.saveRssSources(sources);
+            renderRssSources(sources);
+            showNotification("分类已更新");
+        }
+        
+        dialog.remove();
+    });
 }
 
 // ============= 文章列表处理 =============
@@ -2603,5 +2814,110 @@ function initAppSettingsPanel() {
                 showNotification(t('save_settings_error'), 'error');
             }
         });
+    }
+}
+
+// 处理RSS源点击事件
+async function handleSourceClick(e) {
+    try {
+        const sourceItem = e.currentTarget;
+        const sourceUrl = sourceItem.dataset.url;
+        const sourceIndex = parseInt(sourceItem.dataset.index);
+        
+        // 不重复加载相同的源
+        if (sourceUrl === window.currentFeedUrl) return;
+        
+        console.log(`选择RSS源: ${sourceUrl}`);
+        
+        // 更新当前源URL
+        window.currentFeedUrl = sourceUrl;
+        
+        // 添加选中状态
+        document.querySelectorAll(".source-item").forEach(item => {
+            item.classList.remove("selected");
+        });
+        sourceItem.classList.add("selected");
+        
+        // 获取文章列表容器和头部元素
+        if (!articlesContainer) {
+            articlesContainer = document.getElementById("articles-container");
+        }
+        
+        // 获取文章标题元素
+        const articlesHeader = document.getElementById("articles-header");
+        
+        // 确保容器存在
+        if (!articlesContainer) {
+            console.error("文章列表容器未找到");
+            showNotification("无法显示文章列表", "error");
+            return;
+        }
+        
+        // 显示加载中
+        articlesContainer.innerHTML = '<div class="loader"><span class="loading-indicator"></span> 加载文章中...</div>';
+        
+        // 更新标题（如果存在）
+        if (articlesHeader) {
+            articlesHeader.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 加载中...';
+        }
+        
+        // 确保文章显示容器已初始化
+        if (!articleContainer) {
+            articleContainer = document.getElementById("article-container");
+        }
+        
+        // 重置文章内容
+        resetArticleContent();
+        
+        console.log("开始获取RSS内容:", sourceUrl);
+        
+        // 添加超时处理
+        const timeoutPromise = new Promise((_, reject) => {
+            setTimeout(() => reject(new Error("加载文章超时，请检查网络连接")), 15000);
+        });
+        
+        // 获取RSS内容
+        const feed = await Promise.race([
+            window.electronAPI.fetchRss(sourceUrl),
+            timeoutPromise
+        ]);
+        
+        console.log(`获取到 ${feed && feed.items ? feed.items.length : 0} 篇文章`);
+        
+        if (!feed || !feed.items) {
+            throw new Error("无法解析RSS内容");
+        }
+        
+        // 保存文章列表
+        window.currentArticles = feed.items || [];
+        
+        // 更新标题
+        if (articlesHeader) {
+            articlesHeader.innerHTML = `<i class="fas fa-newspaper"></i> ${feed.title || '文章列表'}`;
+        }
+        
+        // 渲染文章列表
+        renderArticlesList(window.currentArticles);
+        
+        // 如果有文章，默认选中第一篇
+        if (window.currentArticles.length > 0) {
+            const firstArticle = document.querySelector(".article-item");
+            if (firstArticle) {
+                firstArticle.click();
+            }
+        }
+    } catch (error) {
+        console.error("加载RSS文章失败:", error);
+        
+        if (articlesContainer) {
+            articlesContainer.innerHTML = `<div class="error-message">加载文章失败: ${error.message}</div>`;
+        }
+        
+        const articlesHeader = document.getElementById("articles-header");
+        if (articlesHeader) {
+            articlesHeader.innerHTML = `<i class="fas fa-exclamation-triangle"></i> <span class="header-text">加载失败</span>`;
+        }
+        
+        showNotification("加载文章失败: " + error.message, "error");
     }
 } 

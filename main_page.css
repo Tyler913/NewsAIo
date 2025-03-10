@@ -23,6 +23,8 @@
     --ai-summary-bg: rgba(74, 111, 165, 0.1);
     --ai-summary-text: #333;
     --column-header-bg: #f8f9fa;
+    --category-header-bg: rgba(0, 0, 0, 0.03);
+    --category-hover-bg: rgba(0, 0, 0, 0.05);
 }
 
 :root.dark {
@@ -1350,4 +1352,220 @@ body.dark-mode .translation-content {
 
 :root.dark .back-button:hover {
     background-color: #444;
+}
+
+/* 添加RSS分类样式 */
+.category-container {
+    margin-bottom: 8px;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.category-header {
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    background-color: var(--category-header-bg);
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    font-weight: 500;
+    border-radius: 6px;
+}
+
+.category-header:hover {
+    background-color: var(--category-hover-bg);
+}
+
+.category-name {
+    margin-left: 8px;
+    flex-grow: 1;
+}
+
+.category-count {
+    font-size: 0.85em;
+    color: var(--text-color-light);
+    margin-left: 6px;
+}
+
+.category-toggle {
+    font-size: 0.85em;
+    color: var(--primary-color);
+    width: 16px;
+    text-align: center;
+    transition: transform 0.2s ease;
+}
+
+.category-feeds {
+    padding-left: 0;
+    list-style: none;
+    margin: 0;
+    max-height: 1000px;
+    transition: max-height 0.3s ease;
+    overflow: hidden;
+}
+
+.category-feeds li {
+    margin-left: 30px;
+    position: relative;
+}
+
+.source-item-actions {
+    display: flex;
+    align-items: center;
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.source-item:hover .source-item-actions {
+    opacity: 1;
+}
+
+.feed-actions-toggle {
+    cursor: pointer;
+    color: var(--text-color-light);
+    padding: 4px;
+    border-radius: 4px;
+}
+
+.feed-actions-toggle:hover {
+    background-color: var(--hover-color);
+    color: var(--primary-color);
+}
+
+/* Feed 上下文菜单 */
+.feed-context-menu {
+    position: fixed;
+    background-color: var(--card-bg-color);
+    border-radius: 8px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    min-width: 180px;
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+}
+
+.feed-context-menu ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.feed-context-menu li {
+    padding: 10px 15px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    display: flex;
+    align-items: center;
+    margin: 0;
+}
+
+.feed-context-menu li:hover {
+    background-color: var(--hover-color);
+}
+
+.feed-context-menu li i {
+    margin-right: 10px;
+    color: var(--primary-color);
+    width: 18px;
+    text-align: center;
+}
+
+/* 修改分类对话框 */
+.modal-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.form-group label {
+    font-weight: 500;
+    font-size: 0.9em;
+    color: var(--text-color-light);
+}
+
+.form-group select {
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+    background-color: var(--card-bg-color);
+    font-size: 1em;
+    outline: none;
+    transition: border-color 0.2s ease;
+}
+
+.form-group select:focus {
+    border-color: var(--primary-color);
+}
+
+.modal-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.modal-buttons button {
+    padding: 8px 16px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-size: 0.9em;
+    transition: background-color 0.2s ease;
+}
+
+.modal-buttons button:not(.primary-button) {
+    background-color: rgba(0, 0, 0, 0.05);
+    color: var(--text-color);
+}
+
+.modal-buttons button:not(.primary-button):hover {
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
+/* 深色模式下的样式调整 */
+:root.dark .category-header {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+:root.dark .category-header:hover {
+    background-color: rgba(255, 255, 255, 0.08);
+}
+
+:root.dark .feed-context-menu {
+    background-color: #2a2a2a;
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+:root.dark .feed-context-menu li:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+:root.dark .form-group select {
+    background-color: #2a2a2a;
+    border-color: rgba(255, 255, 255, 0.1);
+    color: #eee;
+}
+
+:root.dark .form-group select:focus {
+    border-color: var(--primary-color-light);
+}
+
+:root.dark .modal-buttons button:not(.primary-button) {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #eee;
+}
+
+:root.dark .modal-buttons button:not(.primary-button):hover {
+    background-color: rgba(255, 255, 255, 0.15);
 }

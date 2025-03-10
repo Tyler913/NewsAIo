@@ -991,12 +991,28 @@
             <div class="modal-content">
                 <span class="close-button" id="modal-close-button">&times;</span>
                 <h2><i class="fas fa-rss"></i> 添加新的 RSS 订阅</h2>
-                <input
-                    type="text"
-                    id="rss-url-input"
-                    placeholder="输入 RSS 订阅链接"
-                />
-                <button id="submit-rss-button"><i class="fas fa-plus"></i> 添加订阅</button>
+                <div class="modal-form">
+                    <div class="form-group">
+                        <label for="rss-url-input">RSS 订阅链接:</label>
+                        <input
+                            type="text"
+                            id="rss-url-input"
+                            placeholder="输入 RSS 订阅链接"
+                        />
+                    </div>
+                    <div class="form-group">
+                        <label for="feed-category-select">选择分类:</label>
+                        <select id="feed-category-select">
+                            <option value="未分类">未分类</option>
+                            <!-- 其他分类将通过JavaScript动态加载 -->
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="new-feed-category">或创建新分类:</label>
+                        <input type="text" id="new-feed-category" placeholder="输入新分类名称">
+                    </div>
+                    <button id="submit-rss-button" class="primary-button"><i class="fas fa-plus"></i> 添加订阅</button>
+                </div>
                 <div
                     id="modal-error"
                     style="display: none; color: red; margin-top: 10px"
