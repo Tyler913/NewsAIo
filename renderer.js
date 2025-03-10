@@ -50,6 +50,41 @@ document.addEventListener("DOMContentLoaded", function () {
         if (!articlesList) throw new Error("找不到文章列表元素 (id: articles)");
         if (!articleDisplay) throw new Error("找不到文章内容元素 (id: article-content)");
         
+        // 添加AI设置面板按钮点击事件
+        const aiSettingsToggle = document.getElementById('ai-settings-toggle');
+        if (aiSettingsToggle) {
+            aiSettingsToggle.addEventListener('click', function() {
+                // 获取面板元素
+                const aiSettingsPanel = document.getElementById('ai-settings-panel');
+                if (aiSettingsPanel) {
+                    // 检查面板是否正在打开（而不是关闭）
+                    const wasHidden = !aiSettingsPanel.classList.contains('active');
+                    
+                    // 切换面板显示状态
+                    aiSettingsPanel.classList.toggle('active');
+                    
+                    // 如果是从隐藏变为显示，确保表单数据被正确填充
+                    if (wasHidden && aiSettingsPanel.classList.contains('active')) {
+                        // 重新加载API设置并填充表单
+                        loadApiSettings().then(() => {
+                            // 确保自定义字段也正确显示
+                            if (apiSettings && apiSettings.providers) {
+                                if (apiSettings.providers.openai && apiSettings.providers.openai.useCustomEndpoint) {
+                                    document.getElementById('openai-endpoint-container').style.display = 'block';
+                                }
+                                if (apiSettings.providers.deepseek && apiSettings.providers.deepseek.useCustomEndpoint) {
+                                    document.getElementById('deepseek-endpoint-container').style.display = 'block';
+                                }
+                                if (apiSettings.providers.anthropic && apiSettings.providers.anthropic.useCustomEndpoint) {
+                                    document.getElementById('anthropic-endpoint-container').style.display = 'block';
+                                }
+                            }
+                        });
+                    }
+                }
+            });
+        }
+        
         // 如果所有元素都存在，继续初始化操作
         console.log("开始加载RSS源...");
         loadRssSources();
@@ -626,24 +661,98 @@ async function loadApiSettings() {
 }
 
 function populateApiSettingsForm() {
-    if (!apiSettings) return;
+    if (!apiSettings || !apiSettings.providers) return;
 
     // Set active provider
-    document.getElementById('active-api').value = apiSettings.activeProvider;
-    document.getElementById('summary-length').value = apiSettings.summaryLength;
+    const activeApiRadios = document.querySelectorAll('input[name="active-api"]');
+    if (activeApiRadios) {
+        activeApiRadios.forEach(radio => {
+            radio.checked = (radio.value === apiSettings.activeProvider);
+        });
+    }
+    
+    document.getElementById('summary-length').value = apiSettings.summaryLength || "medium";
     document.getElementById('summary-language').value = apiSettings.summaryLanguage || "auto";
+    
+    // 设置开关状态
+    const autoSummarizeToggle = document.getElementById('auto-summarize');
+    if (autoSummarizeToggle) {
+        autoSummarizeToggle.checked = !!apiSettings.autoSummarize;
+    }
+    
+    const streamModeToggle = document.getElementById('stream-mode');
+    if (streamModeToggle) {
+        streamModeToggle.checked = !!apiSettings.useStreamMode;
+    }
 
     // Set OpenAI settings
-    document.getElementById('openai-api-key').value = apiSettings.providers.openai.apiKey;
-    document.getElementById('openai-model').value = apiSettings.providers.openai.model;
+    if (apiSettings.providers.openai) {
+        document.getElementById('openai-api-key').value = apiSettings.providers.openai.apiKey || '';
+        document.getElementById('openai-model').value = apiSettings.providers.openai.model || 'gpt-3.5-turbo';
+        
+        // 设置自定义模型
+        const openaiCustomModel = document.getElementById('openai-custom-model');
+        if (openaiCustomModel) {
+            openaiCustomModel.value = apiSettings.providers.openai.customModel || '';
+        }
+        
+        // 设置自定义接入点
+        const openaiCustomEndpointToggle = document.getElementById('openai-custom-endpoint-toggle');
+        const openaiEndpointContainer = document.getElementById('openai-endpoint-container');
+        const openaiEndpoint = document.getElementById('openai-endpoint');
+        
+        if (openaiCustomEndpointToggle && openaiEndpointContainer && openaiEndpoint) {
+            openaiCustomEndpointToggle.checked = !!apiSettings.providers.openai.useCustomEndpoint;
+            openaiEndpointContainer.style.display = apiSettings.providers.openai.useCustomEndpoint ? 'block' : 'none';
+            openaiEndpoint.value = apiSettings.providers.openai.endpoint || '';
+        }
+    }
 
     // Set DeepSeek settings
-    document.getElementById('deepseek-api-key').value = apiSettings.providers.deepseek.apiKey;
-    document.getElementById('deepseek-model').value = apiSettings.providers.deepseek.model;
+    if (apiSettings.providers.deepseek) {
+        document.getElementById('deepseek-api-key').value = apiSettings.providers.deepseek.apiKey || '';
+        document.getElementById('deepseek-model').value = apiSettings.providers.deepseek.model || 'deepseek-chat';
+        
+        // 设置自定义模型
+        const deepseekCustomModel = document.getElementById('deepseek-custom-model');
+        if (deepseekCustomModel) {
+            deepseekCustomModel.value = apiSettings.providers.deepseek.customModel || '';
+        }
+        
+        // 设置自定义接入点
+        const deepseekCustomEndpointToggle = document.getElementById('deepseek-custom-endpoint-toggle');
+        const deepseekEndpointContainer = document.getElementById('deepseek-endpoint-container');
+        const deepseekEndpoint = document.getElementById('deepseek-endpoint');
+        
+        if (deepseekCustomEndpointToggle && deepseekEndpointContainer && deepseekEndpoint) {
+            deepseekCustomEndpointToggle.checked = !!apiSettings.providers.deepseek.useCustomEndpoint;
+            deepseekEndpointContainer.style.display = apiSettings.providers.deepseek.useCustomEndpoint ? 'block' : 'none';
+            deepseekEndpoint.value = apiSettings.providers.deepseek.endpoint || '';
+        }
+    }
 
     // Set Anthropic settings
-    document.getElementById('anthropic-api-key').value = apiSettings.providers.anthropic.apiKey;
-    document.getElementById('anthropic-model').value = apiSettings.providers.anthropic.model;
+    if (apiSettings.providers.anthropic) {
+        document.getElementById('anthropic-api-key').value = apiSettings.providers.anthropic.apiKey || '';
+        document.getElementById('anthropic-model').value = apiSettings.providers.anthropic.model || 'claude-3-haiku';
+        
+        // 设置自定义模型
+        const anthropicCustomModel = document.getElementById('anthropic-custom-model');
+        if (anthropicCustomModel) {
+            anthropicCustomModel.value = apiSettings.providers.anthropic.customModel || '';
+        }
+        
+        // 设置自定义接入点
+        const anthropicCustomEndpointToggle = document.getElementById('anthropic-custom-endpoint-toggle');
+        const anthropicEndpointContainer = document.getElementById('anthropic-endpoint-container');
+        const anthropicEndpoint = document.getElementById('anthropic-endpoint');
+        
+        if (anthropicCustomEndpointToggle && anthropicEndpointContainer && anthropicEndpoint) {
+            anthropicCustomEndpointToggle.checked = !!apiSettings.providers.anthropic.useCustomEndpoint;
+            anthropicEndpointContainer.style.display = apiSettings.providers.anthropic.useCustomEndpoint ? 'block' : 'none';
+            anthropicEndpoint.value = apiSettings.providers.anthropic.endpoint || '';
+        }
+    }
 }
 
 function applySettings() {
@@ -721,6 +830,8 @@ saveApiSettingsBtn.addEventListener("click", async () => {
     try {
         await window.electronAPI.saveApiSettings(apiSettings);
         showNotification("API设置已保存");
+        // Repopulate the form fields with saved settings
+        populateApiSettingsForm();
     } catch (error) {
         console.error("保存API设置失败:", error);
         showNotification("保存API设置失败", "error");

@@ -2346,7 +2346,17 @@ function initAISettingsPanel() {
         document.getElementById('app-settings-panel')?.classList.remove('active');
         
         // 切换当前面板
+        const wasHidden = !aiSettingsPanel.classList.contains('active');
         aiSettingsPanel.classList.toggle('active');
+        
+        // 如果面板是从隐藏变为显示，重新初始化API设置面板
+        if (wasHidden && aiSettingsPanel.classList.contains('active')) {
+            // 重新加载API设置
+            loadApiSettings().then(() => {
+                // 重新初始化面板
+                initAISettingsPanel();
+            });
+        }
     });
     
     // 关闭设置面板
