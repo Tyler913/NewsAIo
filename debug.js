@@ -1643,17 +1643,45 @@ async function saveApiSettings() {
             endpoint: document.getElementById('anthropic-endpoint').value
         };
         
-        const result = await window.electronAPI.saveApiSettings(apiSettings);
+        // 从AI设置面板中获取额外的用户设置
+        const autoSummarizeToggle = document.getElementById('auto-summarize');
+        const streamModeToggle = document.getElementById('stream-mode');
+        const summaryLanguageSelect = document.getElementById('summary-language');
+        const summaryLengthSelect = document.getElementById('summary-length');
         
-        if (result) {
-            showNotification('API设置已保存');
-            await loadApiSettings(); // 重新加载最新设置
+        // 更新userSettings对象
+        if (autoSummarizeToggle) {
+            userSettings.autoSummarize = autoSummarizeToggle.checked;
+            console.log("自动摘要设置已更新:", userSettings.autoSummarize);
+        }
+        
+        if (streamModeToggle) {
+            userSettings.useStreamMode = streamModeToggle.checked;
+        }
+        
+        if (summaryLanguageSelect) {
+            userSettings.summaryLanguage = summaryLanguageSelect.value;
+        }
+        
+        if (summaryLengthSelect) {
+            userSettings.summaryLength = summaryLengthSelect.value;
+        }
+        
+        // 先保存API设置
+        const apiResult = await window.electronAPI.saveApiSettings(apiSettings);
+        
+        // 然后保存用户设置
+        const userResult = await window.electronAPI.saveSettings(userSettings);
+        
+        if (apiResult && userResult) {
+            showNotification('设置已保存');
+            await loadApiSettings(); // 重新加载最新API设置
         } else {
-            showNotification('保存API设置失败', 'error');
+            showNotification('保存设置失败', 'error');
         }
     } catch (error) {
-        console.error('保存API设置时出错:', error);
-        showNotification('保存API设置时出错', 'error');
+        console.error('保存设置时出错:', error);
+        showNotification('保存设置时出错', 'error');
     }
 }
 
@@ -2146,6 +2174,7 @@ function handleArticleClick(e) {
         
         // 如果启用了自动摘要，生成摘要
         if (userSettings.autoSummarize) {
+            console.log("自动摘要已启用，正在生成摘要...");
             generateSummary(article);
         }
     } catch (error) {
