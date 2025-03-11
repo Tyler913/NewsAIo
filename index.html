@@ -36,44 +36,62 @@
                 background: rgba(255, 255, 255, 0.65);
                 backdrop-filter: blur(15px);
                 -webkit-backdrop-filter: blur(15px);
+                position: relative;
             }
             
             /* 左侧栏 - RSS源列表 */
             .sources-column {
-                width: 280px;
-                min-width: 280px;
-                max-width: 280px;
+                width: 10%;
                 border-right: 1px solid rgba(224, 224, 224, 0.5);
                 background: rgba(255, 255, 255, 0.25);
                 display: flex;
                 flex-direction: column;
                 overflow: hidden;
-                resize: none;
                 box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+                position: relative;
             }
             
             /* 中间栏 - 文章列表 */
             .articles-column {
-                width: 450px;
-                min-width: 450px;
-                max-width: 450px;
+                width: 20%;
                 border-right: 1px solid rgba(224, 224, 224, 0.5);
                 background: rgba(255, 255, 255, 0.3);
                 display: flex;
                 flex-direction: column;
                 overflow: hidden;
-                resize: none;
                 box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+                position: relative;
             }
             
             /* 右侧栏 - 文章内容 */
             .content-column {
-                flex: 1;
+                width: 70%;
                 background: rgba(255, 255, 255, 0.35);
                 display: flex;
                 flex-direction: column;
                 overflow: hidden;
                 box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            }
+            
+            /* 调整大小的拖拽手柄 */
+            .resize-handle {
+                position: absolute;
+                top: 0;
+                right: 0;
+                width: 6px;
+                height: 100%;
+                cursor: col-resize;
+                background-color: transparent;
+                transition: background-color 0.2s;
+                z-index: 10;
+            }
+            
+            .resize-handle:hover {
+                background-color: rgba(74, 111, 165, 0.3);
+            }
+            
+            .sources-column .resize-handle, .articles-column .resize-handle {
+                right: -3px;
             }
             
             /* 头部样式 */
@@ -877,24 +895,34 @@
             
             /* 响应式设计 */
             @media screen and (max-width: 1400px) {
+                .sources-column {
+                    min-width: 150px;
+                }
                 .articles-column {
-                    width: 400px;
-                    min-width: 400px;
-                    max-width: 400px;
+                    min-width: 250px;
                 }
             }
             
             @media screen and (max-width: 1100px) {
-                .articles-column {
-                    width: 380px;
-                    min-width: 380px;
-                    max-width: 380px;
-                }
-                
                 .sources-column {
-                    width: 250px;
-                    min-width: 250px;
-                    max-width: 250px;
+                    min-width: 120px;
+                }
+                .articles-column {
+                    min-width: 200px;
+                }
+            }
+            
+            @media screen and (max-width: 768px) {
+                .container {
+                    flex-direction: column;
+                }
+                .sources-column, .articles-column, .content-column {
+                    width: 100%;
+                    height: 33.33%;
+                    min-width: 100%;
+                }
+                .resize-handle {
+                    display: none;
                 }
             }
             
@@ -969,13 +997,6 @@
                 transform: translateY(-2px);
                 box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
             }
-            
-            /* Adjust column width once more for good measure */
-            .articles-column {
-                width: 450px;
-                min-width: 450px;
-                max-width: 450px;
-            }
         </style>
     </head>
 
@@ -994,6 +1015,7 @@
                         </div>
                     </ul>
                 </div>
+                <div class="resize-handle" id="sources-resize-handle"></div>
             </div>
             
             <!-- 中间栏：文章列表 -->
@@ -1006,6 +1028,7 @@
                         <p class="empty-state">请先选择左侧的RSS源</p>
                     </div>
                 </div>
+                <div class="resize-handle" id="articles-resize-handle"></div>
             </div>
             
             <!-- 右侧栏：文章内容 -->

@@ -582,6 +582,9 @@ function bindEventListeners() {
     // 注意：设置面板按钮在各自的初始化函数中处理，这里不再重复绑定
     // 以避免事件监听器冲突
     
+    // 初始化列宽调整功能
+    initColumnResizing();
+    
     // Add RSS source button
     const addRssButton = document.getElementById('add-rss-button');
     if (addRssButton) {
@@ -2919,5 +2922,144 @@ async function handleSourceClick(e) {
         }
         
         showNotification("加载文章失败: " + error.message, "error");
+    }
+}
+
+// 初始化列宽调整功能
+function initColumnResizing() {
+    const sourcesColumn = document.querySelector('.sources-column');
+    const articlesColumn = document.querySelector('.articles-column');
+    const contentColumn = document.querySelector('.content-column');
+    const sourcesResizeHandle = document.getElementById('sources-resize-handle');
+    const articlesResizeHandle = document.getElementById('articles-resize-handle');
+    
+    if (!sourcesColumn || !articlesColumn || !contentColumn || !sourcesResizeHandle || !articlesResizeHandle) {
+        console.error("初始化列宽调整失败: 无法找到必要的DOM元素");
+        return;
+    }
+    
+    // 保存初始宽度百分比
+    let initialSourcesWidth = 10; // 默认10%
+    let initialArticlesWidth = 20; // 默认20%
+    
+    // 从localStorage加载保存的宽度设置（如果有）
+    try {
+        const savedLayout = localStorage.getItem('columnLayout');
+        if (savedLayout) {
+            const layout = JSON.parse(savedLayout);
+            initialSourcesWidth = layout.sourcesWidth || initialSourcesWidth;
+            initialArticlesWidth = layout.articlesWidth || initialArticlesWidth;
+            
+            // 应用保存的宽度
+            sourcesColumn.style.width = `${initialSourcesWidth}%`;
+            articlesColumn.style.width = `${initialArticlesWidth}%`;
+            contentColumn.style.width = `${100 - initialSourcesWidth - initialArticlesWidth}%`;
+        }
+    } catch (error) {
+        console.error("加载保存的列宽设置失败:", error);
+    }
+    
+    // 处理左侧栏（RSS源）调整大小
+    let isResizingSources = false;
+    let startX = 0;
+    let startSourcesWidth = 0;
+    let startArticlesWidth = 0;
+    
+    sourcesResizeHandle.addEventListener('mousedown', (e) => {
+        isResizingSources = true;
+        startX = e.clientX;
+        startSourcesWidth = sourcesColumn.offsetWidth;
+        startArticlesWidth = articlesColumn.offsetWidth;
+        document.body.style.cursor = 'col-resize';
+        document.addEventListener('mousemove', handleSourcesResize);
+        document.addEventListener('mouseup', stopSourcesResize);
+        e.preventDefault();
+    });
+    
+    function handleSourcesResize(e) {
+        if (!isResizingSources) return;
+        
+        const containerWidth = document.querySelector('.container').offsetWidth;
+        const dx = e.clientX - startX;
+        
+        // 计算新的宽度百分比
+        let newSourcesWidthPercent = ((startSourcesWidth + dx) / containerWidth) * 100;
+        
+        // 限制最小和最大宽度
+        newSourcesWidthPercent = Math.max(5, Math.min(30, newSourcesWidthPercent));
+        
+        // 应用新宽度
+        sourcesColumn.style.width = `${newSourcesWidthPercent}%`;
+        
+        // 内容列宽度自动调整
+        const articlesWidthPercent = (startArticlesWidth / containerWidth) * 100;
+        contentColumn.style.width = `${100 - newSourcesWidthPercent - articlesWidthPercent}%`;
+        
+        // 保存新的宽度设置
+        saveColumnLayout(newSourcesWidthPercent, articlesWidthPercent);
+    }
+    
+    function stopSourcesResize() {
+        isResizingSources = false;
+        document.body.style.cursor = '';
+        document.removeEventListener('mousemove', handleSourcesResize);
+        document.removeEventListener('mouseup', stopSourcesResize);
+    }
+    
+    // 处理中间栏（文章列表）调整大小
+    let isResizingArticles = false;
+    
+    articlesResizeHandle.addEventListener('mousedown', (e) => {
+        isResizingArticles = true;
+        startX = e.clientX;
+        startSourcesWidth = sourcesColumn.offsetWidth;
+        startArticlesWidth = articlesColumn.offsetWidth;
+        document.body.style.cursor = 'col-resize';
+        document.addEventListener('mousemove', handleArticlesResize);
+        document.addEventListener('mouseup', stopArticlesResize);
+        e.preventDefault();
+    });
+    
+    function handleArticlesResize(e) {
+        if (!isResizingArticles) return;
+        
+        const containerWidth = document.querySelector('.container').offsetWidth;
+        const dx = e.clientX - startX;
+        
+        // 计算新的宽度百分比
+        const sourcesWidthPercent = (sourcesColumn.offsetWidth / containerWidth) * 100;
+        let newArticlesWidthPercent = ((startArticlesWidth + dx) / containerWidth) * 100;
+        
+        // 限制最小和最大宽度
+        newArticlesWidthPercent = Math.max(10, Math.min(40, newArticlesWidthPercent));
+        
+        // 应用新宽度
+        articlesColumn.style.width = `${newArticlesWidthPercent}%`;
+        
+        // 内容列宽度自动调整
+        contentColumn.style.width = `${100 - sourcesWidthPercent - newArticlesWidthPercent}%`;
+        
+        // 保存新的宽度设置
+        saveColumnLayout(sourcesWidthPercent, newArticlesWidthPercent);
+    }
+    
+    function stopArticlesResize() {
+        isResizingArticles = false;
+        document.body.style.cursor = '';
+        document.removeEventListener('mousemove', handleArticlesResize);
+        document.removeEventListener('mouseup', stopArticlesResize);
+    }
+    
+    // 保存列宽设置到localStorage
+    function saveColumnLayout(sourcesWidth, articlesWidth) {
+        try {
+            const layout = {
+                sourcesWidth: sourcesWidth,
+                articlesWidth: articlesWidth
+            };
+            localStorage.setItem('columnLayout', JSON.stringify(layout));
+        } catch (error) {
+            console.error("保存列宽设置失败:", error);
+        }
     }
 } 
