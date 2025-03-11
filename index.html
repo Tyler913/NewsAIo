@@ -156,16 +156,82 @@
                 border-radius: 8px;
             }
             
+            /* 修复RSS源列表左侧间距问题 */
+            .sources-column li {
+                margin: 2px 0;
+                border-radius: 0;
+                padding: 14px 10px;
+            }
+            
+            /* 确保分类中的源条目也没有左右边距 */
+            .sources-column .category-feeds li {
+                margin-left: 20px; /* 保留一些缩进以显示层级关系 */
+                margin-right: 0;
+            }
+            
+            /* 完全修复RSS源列表的左侧间距问题 */
+            .sources-column li {
+                margin: 0;
+                border-radius: 0;
+                padding: 14px 0px 14px 10px; /* 删除左侧所有内边距 */
+                width: 100%;
+            }
+            
+            /* 调整主分类条目 */
+            .sources-column > ul > li {
+                padding-left: 0; /* 主分类条目完全没有左侧内边距 */
+            }
+            
+            /* 确保分类中的源条目只有适当的缩进 */
+            .sources-column .category-feeds li {
+                padding-left: 10px; /* 给子项一些适当的缩进 */
+                margin: 0;
+            }
+            
             li:hover {
                 background: rgba(245, 247, 250, 0.7);
                 transform: translateY(-2px);
                 box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
             }
             
+            /* 确保源列表中的悬停效果覆盖整个宽度 */
+            .sources-column li:hover {
+                transform: none; /* 移除Y轴位移效果，保持平滑 */
+                border-radius: 0;
+                box-shadow: none;
+                background: rgba(245, 247, 250, 0.7);
+            }
+            
             li.selected {
                 background: rgba(227, 242, 253, 0.7);
                 border-left: 3px solid #4a6fa5;
                 box-shadow: 0 4px 12px rgba(74, 111, 165, 0.15);
+            }
+            
+            /* 确保源列表中的选中项样式正确 */
+            .sources-column li.selected {
+                border-left: 3px solid #4a6fa5;
+                padding-left: 0; /* 不添加额外的左内边距 */
+                background: rgba(227, 242, 253, 0.7);
+                width: 100%;
+            }
+            
+            /* 为选中项的图标和文字调整距离 */
+            .sources-column li.selected i,
+            .sources-column li.selected .source-title {
+                margin-left: 9px; /* 考虑到左边框的3px宽度 */
+            }
+            
+            /* 调整源列表中的RSS图标和文字 */
+            .sources-column li i,
+            .sources-column li .source-title {
+                margin-left: 12px; /* 给图标和文字添加一些左边距，而不是给整个li元素 */
+            }
+            
+            /* 源列表中的分类不需要额外的左边距 */
+            .sources-column > ul > li > i,
+            .sources-column > ul > li > .category-name {
+                margin-left: 20px;
             }
             
             /* 文章列表特有样式 */
